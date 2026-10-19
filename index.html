@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Base Perimeter Watch</title>
+<meta name="theme-color" content="#d9d3bb">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@800&family=Big+Shoulders+Text:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #d9d3bb;      /* field-map khaki */
+    --paper-2: #cbc4a6;
+    --ink: #2f3626;        /* olive drab ink */
+    --ink-soft: #5d6650;
+    --grid: rgba(47, 54, 38, .09);
+    --beam-ok: #4f6b3e;
+    --laser: #e0262a;      /* the colour of a real laser */
+    --amber: #c98f12;
+    --off: #8c8a7a;
+    --card: rgba(255, 252, 238, .45);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #1d2118;
+      --paper-2: #262b1f;
+      --ink: #dcd5b8;
+      --ink-soft: #9ea28a;
+      --grid: rgba(220, 213, 184, .06);
+      --beam-ok: #8db26f;
+      --laser: #ff3b3b;
+      --amber: #e6aa2c;
+      --off: #5c5f50;
+      --card: rgba(255, 255, 255, .03);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 32px 32px;
+    color: var(--ink);
+    font-family: "Big Shoulders Text", "Arial Narrow", sans-serif;
+    font-size: 18px;
+    line-height: 1.45;
+    min-height: 100vh;
+  }
+  body.alarm { animation: alarmbg 1s steps(2) infinite; }
+  @keyframes alarmbg { 50% { background-color: color-mix(in srgb, var(--laser) 22%, var(--paper)); } }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 48px; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    border-bottom: 3px solid var(--ink); padding-bottom: 10px;
+  }
+  .base-name {
+    font-family: "Big Shoulders Stencil Display", "Big Shoulders Text", sans-serif;
+    font-weight: 800; font-size: clamp(30px, 6vw, 46px); line-height: 1; margin: 0;
+    letter-spacing: .01em;
+  }
+  .link {
+    display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; white-space: nowrap;
+  }
+  .lamp { width: 12px; height: 12px; border-radius: 50%; background: var(--off); border: 2px solid var(--ink); }
+  .lamp.on { background: var(--beam-ok); }
+  .lamp.wait { background: var(--amber); }
+
+  /* status */
+  .status { padding: 26px 0 18px; }
+  .status h2 {
+    margin: 0; font-weight: 800; line-height: .95;
+    font-size: clamp(44px, 10vw, 92px);
+  }
+  .status p { margin: 8px 0 0; color: var(--ink-soft); font-size: 19px; max-width: 60ch; }
+  .status.is-alarm h2 { color: var(--laser); }
+  .status.is-arming h2 { color: var(--amber); }
+
+  .grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 28px; align-items: start; }
+  @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+
+  /* map */
+  .map-box { border: 3px solid var(--ink); background: var(--card); padding: 10px; }
+  .map-box svg { width: 100%; height: auto; display: block; }
+  .map-caption { display: flex; flex-wrap: wrap; gap: 14px 22px; padding: 10px 4px 2px; font-size: 15px; color: var(--ink-soft); }
+  .key { display: inline-flex; align-items: center; gap: 6px; }
+  .key i { display: inline-block; width: 22px; height: 4px; }
+
+  .beam { stroke: var(--beam-ok); stroke-width: 3; stroke-dasharray: 10 6; animation: flow 1.2s linear infinite; }
+  .beam.tripped { stroke: var(--laser); stroke-width: 6; stroke-dasharray: none; animation: pulse .5s steps(2) infinite; filter: drop-shadow(0 0 6px var(--laser)); }
+  .beam.off { stroke: var(--off); stroke-dasharray: 3 7; animation: none; }
+  .beam.unknown { stroke: var(--ink-soft); opacity: .45; animation: none; }
+  @keyframes flow { to { stroke-dashoffset: -32; } }
+  @keyframes pulse { 50% { opacity: .25; } }
+  .emitter { fill: var(--ink); }
+  .sensor { fill: var(--paper); stroke: var(--ink); stroke-width: 3; }
+  .sensor.tripped { fill: var(--laser); }
+  .fence { fill: none; stroke: var(--ink); stroke-width: 2; stroke-dasharray: 2 5; }
+  .bldg { fill: var(--paper-2); stroke: var(--ink); stroke-width: 2.5; }
+  .zlabel { fill: var(--ink); font: 800 17px "Big Shoulders Text", sans-serif; }
+  .zlabel.tripped { fill: var(--laser); }
+  .small { fill: var(--ink-soft); font: 600 13px "Big Shoulders Text", sans-serif; }
+
+  /* side column */
+  .panel h3 { font-size: 24px; font-weight: 800; margin: 0 0 8px; }
+  .facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0 0 22px; font-size: 17px; }
+  .facts dt { color: var(--ink-soft); }
+  .facts dd { margin: 0; font-weight: 600; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+  button {
+    font: 800 17px "Big Shoulders Text", sans-serif; color: var(--paper); background: var(--ink);
+    border: 3px solid var(--ink); padding: 9px 16px; cursor: pointer; border-radius: 2px;
+  }
+  button.ghost { background: transparent; color: var(--ink); }
+  button.danger { background: var(--laser); border-color: var(--laser); color: #fff; }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+  button[hidden] { display: none; }
+
+  .log { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
+  .log li { display: grid; grid-template-columns: 74px 1fr; gap: 10px; padding: 9px 0; border-bottom: 1px solid color-mix(in srgb, var(--ink) 25%, transparent); }
+  .log time { color: var(--ink-soft); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .log .t-intruder { color: var(--laser); font-weight: 800; }
+  .log .t-armed { color: var(--beam-ok); font-weight: 600; }
+  .log .t-reset { color: var(--amber); font-weight: 600; }
+  .log .empty { display: block; color: var(--ink-soft); }
+  .log small { display: block; color: var(--ink-soft); font-size: 14px; }
+
+  dialog { border: 3px solid var(--ink); background: var(--paper); color: var(--ink); padding: 20px; max-width: 440px; width: calc(100% - 32px); }
+  dialog::backdrop { background: rgba(20, 24, 16, .55); }
+  dialog h3 { margin: 0 0 6px; font-size: 26px; }
+  label { display: block; font-weight: 600; margin: 14px 0 4px; }
+  input[type=text] { width: 100%; font: 600 18px "Big Shoulders Text", sans-serif; padding: 8px 10px; border: 2px solid var(--ink); background: var(--card); color: var(--ink); }
+  .hint { font-size: 15px; color: var(--ink-soft); margin: 6px 0 0; }
+  .err { color: var(--laser); font-weight: 600; min-height: 1.4em; margin: 6px 0 0; }
+  .dlg-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .beam, .beam.tripped, body.alarm { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 class="base-name" id="baseName">Base Alpha</h1>
+    <div class="link"><span class="lamp" id="lamp"></span><span id="linkText">Connecting</span></div>
+  </header>
+
+  <section class="status" id="status" aria-live="assertive">
+    <h2 id="headline">Waiting for the base</h2>
+    <p id="subline">No reports yet. Power on the ESP32 and it will check in here once it's armed.</p>
+  </section>
+
+  <div class="grid">
+    <div class="map-box">
+      <svg viewBox="0 0 420 420" role="img" aria-label="Map of the base perimeter with four laser zones">
+        <!-- outer fence -->
+        <rect class="fence" x="16" y="16" width="388" height="388" />
+        <!-- buildings -->
+        <rect class="bldg" x="150" y="150" width="120" height="80" />
+        <text class="small" x="210" y="196" text-anchor="middle">Command post</text>
+        <rect class="bldg" x="110" y="262" width="58" height="44" />
+        <rect class="bldg" x="186" y="262" width="58" height="44" />
+        <rect class="bldg" x="262" y="262" width="58" height="44" />
+        <text class="small" x="215" y="330" text-anchor="middle">Barracks</text>
+        <circle class="bldg" cx="318" cy="120" r="22" />
+        <text class="small" x="318" y="158" text-anchor="middle">Tower</text>
+        <rect class="bldg" x="96" y="96" width="40" height="30" />
+        <text class="small" x="116" y="142" text-anchor="middle">Gate</text>
+
+        <!-- Zone 1 north -->
+        <line class="beam unknown" id="b1" x1="54" y1="50" x2="366" y2="50" />
+        <rect class="emitter" x="40" y="42" width="14" height="16" />
+        <circle class="sensor" id="s1" cx="372" cy="50" r="8" />
+        <text class="zlabel" id="l1" x="210" y="40" text-anchor="middle">Zone 1</text>
+        <!-- Zone 2 east -->
+        <line class="beam unknown" id="b2" x1="370" y1="74" x2="370" y2="366" />
+        <rect class="emitter" x="362" y="60" width="16" height="14" />
+        <circle class="sensor" id="s2" cx="370" cy="372" r="8" />
+        <text class="zlabel" id="l2" x="388" y="215" text-anchor="middle" transform="rotate(90 388 215)">Zone 2</text>
+        <!-- Zone 3 south -->
+        <line class="beam unknown" id="b3" x1="342" y1="370" x2="56" y2="370" />
+        <rect class="emitter" x="342" y="362" width="14" height="16" />
+        <circle class="sensor" id="s3" cx="48" cy="370" r="8" />
+        <text class="zlabel" id="l3" x="210" y="394" text-anchor="middle">Zone 3</text>
+        <!-- Zone 4 west -->
+        <line class="beam unknown" id="b4" x1="50" y1="342" x2="50" y2="80" />
+        <rect class="emitter" x="42" y="342" width="16" height="14" />
+        <circle class="sensor" id="s4" cx="50" cy="72" r="8" />
+        <text class="zlabel" id="l4" x="32" y="215" text-anchor="middle" transform="rotate(-90 32 215)">Zone 4</text>
+      </svg>
+      <div class="map-caption">
+        <span class="key"><i style="background:var(--beam-ok)"></i>Beam intact</span>
+        <span class="key"><i style="background:var(--laser)"></i>Beam broken</span>
+        <span class="key"><i style="background:var(--off)"></i>Not aligned, skipped</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="actions">
+        <button id="alertsBtn">Turn on alerts</button>
+        <button id="silenceBtn" class="danger" hidden>Silence this page</button>
+        <button id="testBtn" class="ghost">Send test alert</button>
+        <button id="settingsBtn" class="ghost">Settings</button>
+      </div>
+
+      <dl class="facts">
+        <dt>Last report</dt><dd id="lastSeen">Never</dd>
+        <dt>Intrusions today</dt><dd id="trips">0</dd>
+        <dt>Wi-Fi signal</dt><dd id="rssi">Unknown</dd>
+      </dl>
+
+      <h3>Event log</h3>
+      <ul class="log" id="log"><li><span class="empty">Nothing in the last 12 hours.</span></li></ul>
+    </div>
+  </div>
+</div>
+
+<dialog id="settings">
+  <form method="dialog" id="settingsForm">
+    <h3>Settings</h3>
+    <label for="topicIn">Alarm channel name</label>
+    <input type="text" id="topicIn" autocomplete="off" spellcheck="false">
+    <p class="hint">Must match <b>NTFY_TOPIC</b> in the ESP32 code. Letters, numbers, - and _ only.</p>
+    <label for="nameIn">Base name shown on this page</label>
+    <input type="text" id="nameIn" autocomplete="off">
+    <p class="err" id="settingsErr"></p>
+    <div class="dlg-actions">
+      <button type="button" class="ghost" id="cancelSettings">Cancel</button>
+      <button type="submit" id="saveSettings">Save and reconnect</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+/* ===== Change this default to the same topic you put in the ESP32 code ===== */
+const DEFAULT_TOPIC = "base-alarm-CHANGE-ME-4821";
+const SERVER = "https://ntfy.sh";
+
+const $ = (id) => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+};
+const params = new URLSearchParams(location.search);
+let topic = params.get("topic") || store.get("topic") || DEFAULT_TOPIC;
+let baseName = store.get("baseName") || "Base Alpha";
+const validTopic = (t) => /^[-_A-Za-z0-9]{1,57}$/.test(t);
+
+let es = null, lastId = null, seen = new Set(), events = [];
+let lastSeenTime = 0, latestRssi = null, alertsOn = false, audio = null, siren = null;
+let historyLoaded = false;
+
+/* ---------- parsing ---------- */
+function parse(m) {
+  const tags = m.tags || [];
+  const ev = { id: m.id, time: m.time, text: m.message || "", type: "other", zone: 0, zones: null, rssi: null, trips: null, test: false, status: m.topic && m.topic.endsWith("-status") };
+  for (const t of tags) {
+    if (["intruder", "armed", "reset", "heartbeat"].includes(t)) ev.type = t;
+    else if (t === "test") ev.test = true;
+    else if (/^zone-\d$/.test(t)) ev.zone = +t.slice(5);
+    else if (/^zones-[OX-]{4}$/.test(t)) ev.zones = t.slice(6);
+    else if (/^rssi-?\d+$/.test(t)) ev.rssi = +t.slice(4);
+    else if (/^trips-\d+$/.test(t)) ev.trips = +t.slice(6);
+  }
+  if (ev.status && ev.type === "other") ev.type = "heartbeat";
+  return ev;
+}
+
+function handle(m, live) {
+  if (!m || m.event && m.event !== "message") return;
+  if (seen.has(m.id)) return;
+  seen.add(m.id); lastId = m.id;
+  const ev = parse(m);
+  lastSeenTime = Math.max(lastSeenTime, ev.time * 1000);
+  if (ev.type !== "heartbeat") {
+    events.push(ev);
+    events.sort((a, b) => a.time - b.time);
+  }
+  if (ev.rssi !== null) latestRssi = ev.rssi;
+  render();
+  if (live && ev.type === "intruder") raiseAlarm(ev);
+  if (live && (ev.type === "reset" || ev.type === "armed")) stopSiren();
+}
+
+/* ---------- rendering ---------- */
+
+function fmtTime(sec) {
+  return new Date(sec * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+function ago(ms) {
+  const s = Math.round((Date.now() - ms) / 1000);
+  if (s < 60) return "Just now";
+  const m = Math.round(s / 60);
+  if (m < 60) return m + (m === 1 ? " minute ago" : " minutes ago");
+  const h = Math.round(m / 60);
+  return h + (h === 1 ? " hour ago" : " hours ago");
+}
+
+function render() {
+  $("baseName").textContent = baseName;
+  document.title = baseName + " perimeter";
+
+  const last = [...events].reverse().find((e) => ["intruder", "armed", "reset"].includes(e.type));
+  const st = $("status");
+  st.className = "status";
+  let zones = last && last.zones ? last.zones : null;
+
+  if (!last) {
+    $("headline").textContent = "Waiting for the base";
+    $("subline").textContent = historyLoaded
+      ? "No reports in the last 12 hours. Power on the ESP32 and it will check in here once it's armed."
+      : "Loading recent reports.";
+  } else if (last.type === "intruder") {
+    st.classList.add("is-alarm");
+    $("headline").textContent = (last.test ? "Test: " : "") + "Intruder at zone " + last.zone;
+    $("subline").textContent = "Beam broken at " + fmtTime(last.time) + ". The siren stays on until a guard presses the reset switch on the panel.";
+    if (!zones || last.test) zones = ["1","2","3","4"].map((z) => (+z === last.zone ? "X" : "O")).join("");
+  } else if (last.type === "reset") {
+    st.classList.add("is-arming");
+    $("headline").textContent = "Re-arming";
+    $("subline").textContent = "Alarm cleared at " + fmtTime(last.time) + ". The base arms itself again in 5 seconds.";
+    zones = null;
+  } else {
+    const active = zones ? [...zones].filter((c) => c !== "-").length : 4;
+    $("headline").textContent = "All beams intact";
+    $("subline").textContent = "Armed since " + fmtTime(last.time) + " with " + active + " of 4 laser zones watching.";
+  }
+  document.body.classList.toggle("alarm", !!last && last.type === "intruder");
+
+  for (let i = 1; i <= 4; i++) {
+    const c = zones ? zones[i - 1] : null;
+    const cls = c === "X" ? "tripped" : c === "-" ? "off" : c === "O" ? "" : "unknown";
+    $("b" + i).setAttribute("class", "beam " + cls);
+    $("s" + i).setAttribute("class", "sensor" + (c === "X" ? " tripped" : ""));
+    $("l" + i).setAttribute("class", "zlabel" + (c === "X" ? " tripped" : ""));
+  }
+
+  $("lastSeen").textContent = lastSeenTime ? ago(lastSeenTime) : "Never";
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  $("trips").textContent = events.filter((e) => e.type === "intruder" && !e.test && e.time * 1000 >= today.getTime()).length;
+  $("rssi").textContent = latestRssi === null ? "Unknown" :
+    latestRssi + " dBm (" + (latestRssi > -60 ? "strong" : latestRssi > -75 ? "fair" : "weak") + ")";
+
+  const log = $("log");
+  log.textContent = "";
+  const list = [...events].reverse().slice(0, 40);
+  if (!list.length) {
+    const li = document.createElement("li");
+    li.innerHTML = '<span class="empty">Nothing in the last 12 hours.</span>';
+    log.appendChild(li);
+  }
+  for (const e of list) {
+    const li = document.createElement("li");
+    const t = document.createElement("time");
+    t.textContent = fmtTime(e.time);
+    const d = document.createElement("div");
+    const title = { intruder: "Intruder at zone " + e.zone, armed: "Base armed", reset: "Alarm reset by guard" }[e.type] || "Message";
+    d.innerHTML = '<span class="t-' + e.type + '"></span><small></small>';
+    d.firstChild.textContent = (e.test ? "Test: " : "") + title;
+    d.lastChild.textContent = e.text;
+    li.append(t, d);
+    log.appendChild(li);
+  }
+}
+
+/* ---------- alerts ---------- */
+function startSiren() {
+  if (!audio || siren) return;
+  const osc = audio.createOscillator(), gain = audio.createGain(), lfo = audio.createOscillator(), lfoGain = audio.createGain();
+  osc.type = "sawtooth"; osc.frequency.value = 1100;
+  lfo.frequency.value = 1.2; lfoGain.gain.value = 450;
+  lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
+  gain.gain.value = 0.12;
+  osc.connect(gain); gain.connect(audio.destination);
+  osc.start(); lfo.start();
+  siren = { osc, lfo };
+  $("silenceBtn").hidden = false;
+}
+function stopSiren() {
+  if (siren) { siren.osc.stop(); siren.lfo.stop(); siren = null; }
+  $("silenceBtn").hidden = true;
+}
+function raiseAlarm(ev) {
+  const msg = (ev.test ? "Test alert: " : "") + "laser zone " + ev.zone + " broken at " + fmtTime(ev.time);
+  if (alertsOn) {
+    startSiren();
+    if ("Notification" in window && Notification.permission === "granted") {
+      try { new Notification("Intruder at " + baseName, { body: msg, tag: "base-alarm", requireInteraction: true }); } catch (e) {}
+    }
+  }
+  if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 400]);
+}
+
+$("alertsBtn").addEventListener("click", async () => {
+  try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); await audio.resume(); } catch (e) {}
+  if ("Notification" in window && Notification.permission === "default") {
+    try { await Notification.requestPermission(); } catch (e) {}
+  }
+  alertsOn = true;
+  $("alertsBtn").textContent = "Alerts on";
+  $("alertsBtn").disabled = true;
+});
+$("silenceBtn").addEventListener("click", stopSiren);
+
+$("testBtn").addEventListener("click", async () => {
+  const zone = 1 + Math.floor(Math.random() * 4);
+  $("testBtn").disabled = true;
+  try {
+    await fetch(SERVER, {
+      method: "POST",
+      body: JSON.stringify({
+        topic, title: baseName, priority: 4,
+        message: "Test alert from the website. Zone " + zone + " (no real intruder).",
+        tags: ["test_tube", "intruder", "test", "zone-" + zone]
+      })
+    });
+  } catch (e) {}
+  setTimeout(() => ($("testBtn").disabled = false), 3000);
+});
+
+/* ---------- connection ---------- */
+function setLink(state, text) {
+  $("lamp").className = "lamp" + (state === "on" ? " on" : state === "wait" ? " wait" : "");
+  $("linkText").textContent = text;
+}
+
+async function poll(since) {
+  const url = SERVER + "/" + topic + "," + topic + "-status/json?poll=1&since=" + encodeURIComponent(since);
+  try {
+    const res = await fetch(url);
+    const body = await res.text();
+    for (const line of body.split("\n")) {
+      if (!line.trim()) continue;
+      try { handle(JSON.parse(line), false); } catch (e) {}
+    }
+  } catch (e) {}
+}
+
+async function connect() {
+  if (es) { es.close(); es = null; }
+  events = []; seen = new Set(); lastId = null; lastSeenTime = 0; latestRssi = null; historyLoaded = false;
+  render();
+  setLink("wait", "Connecting");
+  await poll("12h");
+  historyLoaded = true;
+  render();
+
+  es = new EventSource(SERVER + "/" + topic + "," + topic + "-status/sse");
+  let hadError = false;
+  es.onopen = () => {
+    setLink("on", "Live");
+    if (hadError && lastId) poll(lastId);   // catch up on anything missed while offline
+    hadError = false;
+  };
+  es.onerror = () => { hadError = true; setLink("wait", "Reconnecting"); };
+  es.onmessage = (e) => { try { handle(JSON.parse(e.data), true); } catch (err) {} };
+}
+
+/* ---------- settings ---------- */
+$("settingsBtn").addEventListener("click", () => {
+  $("topicIn").value = topic; $("nameIn").value = baseName; $("settingsErr").textContent = "";
+  $("settings").showModal();
+});
+$("cancelSettings").addEventListener("click", () => $("settings").close());
+$("settingsForm").addEventListener("submit", (e) => {
+  const t = $("topicIn").value.trim();
+  if (!validTopic(t)) {
+    e.preventDefault();
+    $("settingsErr").textContent = "Use only letters, numbers, - and _ (up to 57 characters).";
+    return;
+  }
+  topic = t; baseName = $("nameIn").value.trim() || "Base Alpha";
+  store.set("topic", topic); store.set("baseName", baseName);
+  connect();
+});
+
+setInterval(() => { $("lastSeen").textContent = lastSeenTime ? ago(lastSeenTime) : "Never"; }, 30000);
+
+if (!validTopic(topic)) topic = DEFAULT_TOPIC;
+connect();
+</script>
+</body>
+</html>

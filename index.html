@@ -3,222 +3,436 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Base Perimeter Watch</title>
-<meta name="theme-color" content="#d9d3bb">
+<title>Base Alpha Perimeter Command</title>
+<meta name="theme-color" content="#171b12">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@800&family=Big+Shoulders+Text:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@700;900&family=Big+Shoulders+Text:wght@400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
   :root {
-    --paper: #d9d3bb;      /* field-map khaki */
-    --paper-2: #cbc4a6;
-    --ink: #2f3626;        /* olive drab ink */
-    --ink-soft: #5d6650;
-    --grid: rgba(47, 54, 38, .09);
-    --beam-ok: #4f6b3e;
-    --laser: #e0262a;      /* the colour of a real laser */
-    --amber: #c98f12;
-    --off: #8c8a7a;
-    --card: rgba(255, 252, 238, .45);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --paper: #1d2118;
-      --paper-2: #262b1f;
-      --ink: #dcd5b8;
-      --ink-soft: #9ea28a;
-      --grid: rgba(220, 213, 184, .06);
-      --beam-ok: #8db26f;
-      --laser: #ff3b3b;
-      --amber: #e6aa2c;
-      --off: #5c5f50;
-      --card: rgba(255, 255, 255, .03);
-    }
+    --bg: #171b12;          /* olive black */
+    --panel: #20261a;
+    --panel-2: #2a3121;
+    --line: #47502f;
+    --khaki: #d6cda2;       /* stencil paint */
+    --dim: #8e9373;
+    --go: #8bb553;          /* secure */
+    --amber: #e3a72a;       /* caution */
+    --laser: #ff3434;       /* breach, the colour of a real laser */
+    --hazard: #e9bb22;
+    --map: #1c2215;
+    --mapgrid: rgba(214, 205, 162, .07);
+    --bldg: #333b26;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body {
-    background-color: var(--paper);
+    background-color: var(--bg);
     background-image:
-      linear-gradient(var(--grid) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-    background-size: 32px 32px;
-    color: var(--ink);
+      radial-gradient(ellipse 340px 220px at 12% 18%, rgba(70, 82, 45, .32), transparent 70%),
+      radial-gradient(ellipse 280px 300px at 88% 12%, rgba(52, 44, 30, .38), transparent 70%),
+      radial-gradient(ellipse 420px 260px at 72% 78%, rgba(70, 82, 45, .26), transparent 70%),
+      radial-gradient(ellipse 300px 240px at 20% 86%, rgba(52, 44, 30, .34), transparent 70%);
+    background-attachment: fixed;
+    color: var(--khaki);
     font-family: "Big Shoulders Text", "Arial Narrow", sans-serif;
-    font-size: 18px;
+    font-size: 17px;
     line-height: 1.45;
     min-height: 100vh;
   }
-  body.alarm { animation: alarmbg 1s steps(2) infinite; }
-  @keyframes alarmbg { 50% { background-color: color-mix(in srgb, var(--laser) 22%, var(--paper)); } }
+  .mono { font-family: "Share Tech Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 16px 16px 48px; }
 
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 48px; }
-
-  header {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    border-bottom: 3px solid var(--ink); padding-bottom: 10px;
+  /* ---------- top bar ---------- */
+  .topbar { display: flex; align-items: center; gap: 14px; padding-bottom: 14px; border-bottom: 2px solid var(--line); }
+  .insignia { width: 56px; height: 56px; flex: none; }
+  .ident { flex: 1; min-width: 0; }
+  .ident h1 {
+    margin: 0; font-family: "Big Shoulders Stencil Display", sans-serif; font-weight: 900;
+    font-size: clamp(30px, 5.4vw, 48px); line-height: .95; letter-spacing: .02em; text-transform: uppercase;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .base-name {
-    font-family: "Big Shoulders Stencil Display", "Big Shoulders Text", sans-serif;
-    font-weight: 800; font-size: clamp(30px, 6vw, 46px); line-height: 1; margin: 0;
-    letter-spacing: .01em;
+  .ident p { margin: 2px 0 0; color: var(--dim); font-size: 16px; }
+  .clock { text-align: right; flex: none; }
+  .clock .t { font-size: clamp(24px, 4.2vw, 38px); line-height: 1; }
+  .clock .d { color: var(--dim); font-size: 14px; margin-top: 4px; letter-spacing: .08em; }
+
+  /* ---------- riveted panels ---------- */
+  .panel {
+    position: relative; background: var(--panel); border: 2px solid var(--line);
+    padding: 14px 16px 16px; border-radius: 3px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 2px 0 rgba(0, 0, 0, .35);
   }
-  .link {
-    display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; white-space: nowrap;
+  .panel::before, .panel::after {
+    content: ""; position: absolute; top: 6px; width: 6px; height: 6px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #6d7651, #2b311f);
   }
-  .lamp { width: 12px; height: 12px; border-radius: 50%; background: var(--off); border: 2px solid var(--ink); }
-  .lamp.on { background: var(--beam-ok); }
-  .lamp.wait { background: var(--amber); }
-
-  /* status */
-  .status { padding: 26px 0 18px; }
-  .status h2 {
-    margin: 0; font-weight: 800; line-height: .95;
-    font-size: clamp(44px, 10vw, 92px);
+  .panel::before { left: 6px; } .panel::after { right: 6px; }
+  .panel h2 {
+    margin: 0 0 12px; padding: 0 10px; font-family: "Big Shoulders Stencil Display", sans-serif;
+    font-weight: 700; font-size: 21px; letter-spacing: .06em; text-transform: uppercase; color: var(--khaki);
   }
-  .status p { margin: 8px 0 0; color: var(--ink-soft); font-size: 19px; max-width: 60ch; }
-  .status.is-alarm h2 { color: var(--laser); }
-  .status.is-arming h2 { color: var(--amber); }
 
-  .grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 28px; align-items: start; }
-  @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+  /* ---------- condition banner ---------- */
+  .condition { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: center; margin: 16px 0; padding: 18px 20px; }
+  .condition h2 { padding: 0; margin: 0; font-size: clamp(38px, 7.5vw, 76px); line-height: .92; font-weight: 900; letter-spacing: .015em; }
+  .condition p { margin: 8px 0 0; color: var(--dim); font-size: 18px; max-width: 70ch; }
+  .condition p b { color: var(--khaki); font-weight: 600; }
+  .condition.secure h2 { color: var(--go); }
+  .condition.caution h2 { color: var(--amber); }
+  .condition.breach {
+    border-color: var(--laser);
+    background:
+      linear-gradient(var(--panel), var(--panel)) padding-box,
+      repeating-linear-gradient(-45deg, var(--hazard) 0 14px, #111 14px 28px) border-box;
+    border: 8px solid transparent;
+  }
+  .condition.breach h2 { color: var(--laser); animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .35; } }
 
-  /* map */
-  .map-box { border: 3px solid var(--ink); background: var(--card); padding: 10px; }
-  .map-box svg { width: 100%; height: auto; display: block; }
-  .map-caption { display: flex; flex-wrap: wrap; gap: 14px 22px; padding: 10px 4px 2px; font-size: 15px; color: var(--ink-soft); }
-  .key { display: inline-flex; align-items: center; gap: 6px; }
-  .key i { display: inline-block; width: 22px; height: 4px; }
+  .threat { display: flex; flex-direction: column; gap: 6px; min-width: 132px; }
+  .lamp-row { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 15px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+  .lamp { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #0e110b; background: #2c3222; box-shadow: inset 0 2px 3px rgba(0,0,0,.6); }
+  .lamp-row.on { color: var(--khaki); }
+  .lamp-row.on.l-go .lamp { background: var(--go); box-shadow: 0 0 10px var(--go); }
+  .lamp-row.on.l-amber .lamp { background: var(--amber); box-shadow: 0 0 10px var(--amber); }
+  .lamp-row.on.l-red .lamp { background: var(--laser); box-shadow: 0 0 14px var(--laser); animation: blink .6s steps(2) infinite; }
 
-  .beam { stroke: var(--beam-ok); stroke-width: 3; stroke-dasharray: 10 6; animation: flow 1.2s linear infinite; }
-  .beam.tripped { stroke: var(--laser); stroke-width: 6; stroke-dasharray: none; animation: pulse .5s steps(2) infinite; filter: drop-shadow(0 0 6px var(--laser)); }
-  .beam.off { stroke: var(--off); stroke-dasharray: 3 7; animation: none; }
-  .beam.unknown { stroke: var(--ink-soft); opacity: .45; animation: none; }
-  @keyframes flow { to { stroke-dashoffset: -32; } }
-  @keyframes pulse { 50% { opacity: .25; } }
-  .emitter { fill: var(--ink); }
-  .sensor { fill: var(--paper); stroke: var(--ink); stroke-width: 3; }
-  .sensor.tripped { fill: var(--laser); }
-  .fence { fill: none; stroke: var(--ink); stroke-width: 2; stroke-dasharray: 2 5; }
-  .bldg { fill: var(--paper-2); stroke: var(--ink); stroke-width: 2.5; }
-  .zlabel { fill: var(--ink); font: 800 17px "Big Shoulders Text", sans-serif; }
-  .zlabel.tripped { fill: var(--laser); }
-  .small { fill: var(--ink-soft); font: 600 13px "Big Shoulders Text", sans-serif; }
+  .drill {
+    display: none; margin: -4px 0 16px; padding: 10px 16px; font-weight: 800; font-size: 19px; color: #111;
+    background: repeating-linear-gradient(-45deg, var(--hazard) 0 14px, #d39b14 14px 28px); border-radius: 3px;
+  }
+  .drill.show { display: block; }
 
-  /* side column */
-  .panel h3 { font-size: 24px; font-weight: 800; margin: 0 0 8px; }
-  .facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0 0 22px; font-size: 17px; }
-  .facts dt { color: var(--ink-soft); }
-  .facts dd { margin: 0; font-weight: 600; }
+  /* ---------- layout ---------- */
+  .grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); gap: 16px; align-items: start; }
+  .side { display: grid; gap: 16px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .condition { grid-template-columns: 1fr; } .threat { flex-direction: row; flex-wrap: wrap; gap: 14px; } }
 
-  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+  /* ---------- tactical map ---------- */
+  .map svg { width: 100%; height: auto; display: block; }
+  .m-bg { fill: var(--map); }
+  .m-grid { stroke: var(--mapgrid); stroke-width: 1; }
+  .m-coord { fill: var(--dim); font: 13px "Share Tech Mono", monospace; }
+  .m-fence { fill: none; stroke: var(--dim); stroke-width: 1.5; stroke-dasharray: 9 3 2 3; opacity: .8; }
+  .m-wall { fill: none; stroke: #5d6644; stroke-width: 10; stroke-linecap: square; }
+  .m-wall-in { fill: none; stroke: #7c8560; stroke-width: 2; stroke-dasharray: 14 4; }
+  .m-bldg { fill: var(--bldg); stroke: #6a7350; stroke-width: 2; }
+  .m-road { fill: none; stroke: #2d3423; stroke-width: 26; }
+  .m-road-line { fill: none; stroke: #59613f; stroke-width: 2; stroke-dasharray: 10 10; }
+  .m-label { fill: var(--dim); font: 600 13px "Big Shoulders Text", sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  .m-tower { fill: #3b4430; stroke: var(--khaki); stroke-width: 2; }
+  .m-tower-x { stroke: var(--khaki); stroke-width: 1.5; opacity: .6; }
+  .m-tlabel { fill: var(--khaki); font: 800 14px "Big Shoulders Text", sans-serif; }
+  .m-gate { stroke: var(--hazard); stroke-width: 5; stroke-dasharray: 7 6; }
+  .m-heli { fill: none; stroke: #7c8560; stroke-width: 2.5; }
+  .m-helih { fill: #7c8560; font: 900 34px "Big Shoulders Stencil Display", sans-serif; }
+
+  .beam { stroke: var(--go); stroke-width: 3; stroke-dasharray: 12 7; animation: flow 1.1s linear infinite; filter: drop-shadow(0 0 3px var(--go)); }
+  .beam.breach { stroke: var(--laser); stroke-width: 6; stroke-dasharray: none; animation: blink .5s steps(2) infinite; filter: drop-shadow(0 0 8px var(--laser)); }
+  .beam.off { stroke: #5c5f4c; stroke-dasharray: 3 8; animation: none; filter: none; }
+  .beam.unknown, .beam.arming { stroke: var(--dim); opacity: .5; animation: none; filter: none; }
+  .beam.arming { stroke: var(--amber); opacity: .8; stroke-dasharray: 4 6; animation: flow 2s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -38; } }
+  .emit { fill: var(--laser); }
+  .sens { fill: var(--map); stroke: var(--khaki); stroke-width: 2.5; }
+  .zl { fill: var(--khaki); font: 800 16px "Big Shoulders Text", sans-serif; letter-spacing: .04em; }
+  .zl.breach { fill: var(--laser); }
+  .bmark { display: none; }
+  .bmark.show { display: inline; }
+  .bmark circle { fill: none; stroke: var(--laser); stroke-width: 3; animation: ping 1.2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+  .bmark text { fill: var(--laser); font: 900 15px "Big Shoulders Stencil Display", sans-serif; letter-spacing: .06em; }
+  @keyframes ping { from { transform: scale(.5); opacity: 1; } to { transform: scale(1.8); opacity: 0; } }
+
+  .sweep { transform-box: view-box; transform-origin: 438px 168px; animation: sweep 6s linear infinite; }
+  @keyframes sweep { to { transform: rotate(360deg); } }
+  .sweep-stop-a { stop-color: var(--go); }
+  body.is-breach .sweep-stop-a { stop-color: var(--laser); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 10px 10px 0; font-size: 15px; color: var(--dim); }
+  .legend i { display: inline-block; width: 24px; height: 4px; margin-right: 7px; vertical-align: middle; }
+
+  /* ---------- zone table ---------- */
+  .zones { width: 100%; border-collapse: collapse; }
+  .zones td { padding: 9px 6px; border-top: 1px solid var(--line); vertical-align: middle; }
+  .zones .zid { font-family: "Big Shoulders Stencil Display", sans-serif; font-weight: 900; font-size: 24px; width: 42px; }
+  .zones .zname { font-weight: 600; }
+  .zones .zname small { display: block; color: var(--dim); font-weight: 400; font-size: 14px; }
+  .meter { width: 100%; min-width: 64px; height: 10px; background: #12160e; border: 1px solid var(--line); position: relative; }
+  .meter span { position: absolute; inset: 0 auto 0 0; background: var(--go); }
+  .meter .trip { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--amber); left: 55%; }
+  .pct { font-size: 14px; color: var(--dim); text-align: right; width: 44px; }
+  .chip {
+    display: inline-block; min-width: 82px; text-align: center; padding: 3px 8px; font-weight: 800; font-size: 14px;
+    letter-spacing: .07em; text-transform: uppercase; border: 2px solid currentColor; border-radius: 2px;
+  }
+  .c-secure { color: var(--go); }
+  .c-breach { color: #fff; background: var(--laser); border-color: var(--laser); animation: blink .8s steps(2) infinite; }
+  .c-off, .c-nodata { color: var(--dim); }
+  .c-arming { color: var(--amber); }
+
+  /* ---------- telemetry ---------- */
+  .tele { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; }
+  .tele dt { color: var(--dim); }
+  .tele dd { margin: 0; font-weight: 600; }
+  .ok { color: var(--go); } .warn { color: var(--amber); } .bad { color: var(--laser); }
+
+  /* ---------- controls ---------- */
+  .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   button {
-    font: 800 17px "Big Shoulders Text", sans-serif; color: var(--paper); background: var(--ink);
-    border: 3px solid var(--ink); padding: 9px 16px; cursor: pointer; border-radius: 2px;
+    font: 800 16px "Big Shoulders Text", sans-serif; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--khaki); background: linear-gradient(#3a4329, #2a3120); border: 2px solid #5d6644;
+    border-bottom-width: 4px; padding: 10px 12px; cursor: pointer; border-radius: 3px;
   }
-  button.ghost { background: transparent; color: var(--ink); }
-  button.danger { background: var(--laser); border-color: var(--laser); color: #fff; }
-  button:focus-visible, input:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+  button:active { border-bottom-width: 2px; transform: translateY(2px); }
+  button:disabled { opacity: .55; cursor: default; }
+  button.primary { background: linear-gradient(#58702f, #3f5221); border-color: #7d9a48; }
+  button.danger { background: linear-gradient(#b52424, #861818); border-color: #e04040; color: #fff; }
   button[hidden] { display: none; }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--hazard); outline-offset: 2px; }
 
-  .log { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
-  .log li { display: grid; grid-template-columns: 74px 1fr; gap: 10px; padding: 9px 0; border-bottom: 1px solid color-mix(in srgb, var(--ink) 25%, transparent); }
-  .log time { color: var(--ink-soft); font-weight: 600; font-variant-numeric: tabular-nums; }
-  .log .t-intruder { color: var(--laser); font-weight: 800; }
-  .log .t-armed { color: var(--beam-ok); font-weight: 600; }
-  .log .t-reset { color: var(--amber); font-weight: 600; }
-  .log .empty { display: block; color: var(--ink-soft); }
-  .log small { display: block; color: var(--ink-soft); font-size: 14px; }
+  /* ---------- incident log ---------- */
+  .logwrap { margin-top: 16px; }
+  .log { width: 100%; border-collapse: collapse; font-size: 16px; }
+  .log th { text-align: left; color: var(--dim); font-weight: 600; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; padding: 6px 8px; border-bottom: 2px solid var(--line); }
+  .log td { padding: 8px; border-bottom: 1px solid rgba(71, 80, 47, .6); vertical-align: top; }
+  .log td.time { white-space: nowrap; color: var(--dim); }
+  .log .ev { font-weight: 800; white-space: nowrap; }
+  .e-intruder, .e-breach { color: var(--laser); }
+  .e-armed { color: var(--go); }
+  .e-reset, .e-boot { color: var(--amber); }
+  .e-drill { color: var(--hazard); }
+  .log .empty { color: var(--dim); padding: 14px 8px; }
+  @media (max-width: 640px) { .log .hide-sm { display: none; } }
 
-  dialog { border: 3px solid var(--ink); background: var(--paper); color: var(--ink); padding: 20px; max-width: 440px; width: calc(100% - 32px); }
-  dialog::backdrop { background: rgba(20, 24, 16, .55); }
-  dialog h3 { margin: 0 0 6px; font-size: 26px; }
+  dialog { border: 2px solid var(--line); background: var(--panel); color: var(--khaki); padding: 20px; max-width: 440px; width: calc(100% - 32px); border-radius: 3px; }
+  dialog::backdrop { background: rgba(8, 10, 6, .7); }
+  dialog h3 { margin: 0 0 4px; font-family: "Big Shoulders Stencil Display", sans-serif; font-size: 26px; text-transform: uppercase; }
   label { display: block; font-weight: 600; margin: 14px 0 4px; }
-  input[type=text] { width: 100%; font: 600 18px "Big Shoulders Text", sans-serif; padding: 8px 10px; border: 2px solid var(--ink); background: var(--card); color: var(--ink); }
-  .hint { font-size: 15px; color: var(--ink-soft); margin: 6px 0 0; }
+  input[type=text] { width: 100%; font: 18px "Share Tech Mono", monospace; padding: 8px 10px; border: 2px solid var(--line); background: #12160e; color: var(--khaki); border-radius: 2px; }
+  .hint { font-size: 15px; color: var(--dim); margin: 6px 0 0; }
   .err { color: var(--laser); font-weight: 600; min-height: 1.4em; margin: 6px 0 0; }
   .dlg-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
 
+  @media (max-width: 640px) {
+    .ident h1 { white-space: normal; font-size: 30px; }
+    .ident p { font-size: 14px; }
+    .insignia { width: 44px; height: 44px; }
+    .zones .zname small { display: none; }
+    .zones td { padding: 8px 4px; }
+    .zones .zid { width: 34px; font-size: 21px; }
+    .chip { min-width: 0; font-size: 12px; padding: 3px 6px; }
+    .controls { grid-template-columns: 1fr; }
+  }
   @media (prefers-reduced-motion: reduce) {
-    .beam, .beam.tripped, body.alarm { animation: none !important; }
+    *, *::before, *::after { animation: none !important; }
   }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1 class="base-name" id="baseName">Base Alpha</h1>
-    <div class="link"><span class="lamp" id="lamp"></span><span id="linkText">Connecting</span></div>
+
+  <header class="topbar">
+    <svg class="insignia" viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M32 3 L58 12 V32 C58 47 46 57 32 61 C18 57 6 47 6 32 V12 Z" fill="#2f3824" stroke="#d6cda2" stroke-width="2.5"/>
+      <path d="M32 15 L35.6 25.8 H47 L37.8 32.4 L41.3 43.2 L32 36.6 L22.7 43.2 L26.2 32.4 L17 25.8 H28.4 Z" fill="#d6cda2"/>
+      <path d="M16 48 L32 54 L48 48" fill="none" stroke="#e9bb22" stroke-width="3"/>
+    </svg>
+    <div class="ident">
+      <h1 id="baseName">Base Alpha</h1>
+      <p>Perimeter command, laser tripwire network</p>
+    </div>
+    <div class="clock">
+      <div class="t mono" id="clock">--:--:--</div>
+      <div class="d mono" id="date"></div>
+    </div>
   </header>
 
-  <section class="status" id="status" aria-live="assertive">
-    <h2 id="headline">Waiting for the base</h2>
-    <p id="subline">No reports yet. Power on the ESP32 and it will check in here once it's armed.</p>
+  <section class="panel condition" id="condition" aria-live="assertive">
+    <div>
+      <h2 id="headline">Awaiting base</h2>
+      <p id="subline">Loading recent reports.</p>
+    </div>
+    <div class="threat" aria-label="Threat level">
+      <div class="lamp-row l-go" id="lampGo"><span class="lamp"></span>Secure</div>
+      <div class="lamp-row l-amber" id="lampAmber"><span class="lamp"></span>Caution</div>
+      <div class="lamp-row l-red" id="lampRed"><span class="lamp"></span>Breach</div>
+    </div>
   </section>
+  <div class="drill" id="drill" role="status"></div>
 
   <div class="grid">
-    <div class="map-box">
-      <svg viewBox="0 0 420 420" role="img" aria-label="Map of the base perimeter with four laser zones">
-        <!-- outer fence -->
-        <rect class="fence" x="16" y="16" width="388" height="388" />
+    <section class="panel map" aria-label="Tactical map">
+      <h2>Tactical map</h2>
+      <svg viewBox="-34 -30 668 676" role="img" aria-label="Map of the base. Four laser beams run between the four corner watchtowers.">
+        <defs>
+          <linearGradient id="sweepGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop class="sweep-stop-a" offset="0" stop-opacity="0"/>
+            <stop class="sweep-stop-a" offset="1" stop-opacity=".28"/>
+          </linearGradient>
+          <clipPath id="mapClip"><rect x="0" y="0" width="600" height="600"/></clipPath>
+          <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="8" stroke="#6a7350" stroke-width="2"/>
+          </pattern>
+        </defs>
+
+        <!-- map sheet + grid -->
+        <rect class="m-bg" x="0" y="0" width="600" height="600"/>
+        <g id="gridLines"></g>
+        <g id="gridCoords"></g>
+
+        <!-- radar sweep -->
+        <g clip-path="url(#mapClip)">
+          <path class="sweep" d="M438 168 L1038 168 A600 600 0 0 0 862 -256 Z" fill="url(#sweepGrad)"/>
+        </g>
+
+        <!-- outer barbed-wire fence -->
+        <rect class="m-fence" x="14" y="14" width="572" height="572"/>
+
+        <!-- road from main gate -->
+        <path class="m-road" d="M300 600 V 336"/>
+        <path class="m-road-line" d="M300 600 V 336"/>
+
+        <!-- perimeter wall (gap for the gate on the south side) -->
+        <path class="m-wall" d="M270 550 H50 V50 H550 V550 H330"/>
+        <path class="m-wall-in" d="M270 550 H50 V50 H550 V550 H330"/>
+        <line class="m-gate" x1="272" y1="550" x2="328" y2="550"/>
+        <rect class="m-bldg" x="336" y="560" width="18" height="18"/>
+        <text class="m-label" x="300" y="596" text-anchor="middle">Main gate</text>
+
         <!-- buildings -->
-        <rect class="bldg" x="150" y="150" width="120" height="80" />
-        <text class="small" x="210" y="196" text-anchor="middle">Command post</text>
-        <rect class="bldg" x="110" y="262" width="58" height="44" />
-        <rect class="bldg" x="186" y="262" width="58" height="44" />
-        <rect class="bldg" x="262" y="262" width="58" height="44" />
-        <text class="small" x="215" y="330" text-anchor="middle">Barracks</text>
-        <circle class="bldg" cx="318" cy="120" r="22" />
-        <text class="small" x="318" y="158" text-anchor="middle">Tower</text>
-        <rect class="bldg" x="96" y="96" width="40" height="30" />
-        <text class="small" x="116" y="142" text-anchor="middle">Gate</text>
+        <rect class="m-bldg" x="228" y="232" width="144" height="104"/>
+        <text class="m-label" x="300" y="280" text-anchor="middle">Command post</text>
+        <text class="m-label" x="300" y="298" text-anchor="middle" style="font-size:11px">HQ</text>
+        <line x1="300" y1="232" x2="300" y2="206" stroke="#d6cda2" stroke-width="2"/>
+        <path d="M300 206 h16 l-4 6 l4 6 h-16 Z" fill="#e9bb22"/>
 
-        <!-- Zone 1 north -->
-        <line class="beam unknown" id="b1" x1="54" y1="50" x2="366" y2="50" />
-        <rect class="emitter" x="40" y="42" width="14" height="16" />
-        <circle class="sensor" id="s1" cx="372" cy="50" r="8" />
-        <text class="zlabel" id="l1" x="210" y="40" text-anchor="middle">Zone 1</text>
-        <!-- Zone 2 east -->
-        <line class="beam unknown" id="b2" x1="370" y1="74" x2="370" y2="366" />
-        <rect class="emitter" x="362" y="60" width="16" height="14" />
-        <circle class="sensor" id="s2" cx="370" cy="372" r="8" />
-        <text class="zlabel" id="l2" x="388" y="215" text-anchor="middle" transform="rotate(90 388 215)">Zone 2</text>
-        <!-- Zone 3 south -->
-        <line class="beam unknown" id="b3" x1="342" y1="370" x2="56" y2="370" />
-        <rect class="emitter" x="342" y="362" width="14" height="16" />
-        <circle class="sensor" id="s3" cx="48" cy="370" r="8" />
-        <text class="zlabel" id="l3" x="210" y="394" text-anchor="middle">Zone 3</text>
-        <!-- Zone 4 west -->
-        <line class="beam unknown" id="b4" x1="50" y1="342" x2="50" y2="80" />
-        <rect class="emitter" x="42" y="342" width="16" height="14" />
-        <circle class="sensor" id="s4" cx="50" cy="72" r="8" />
-        <text class="zlabel" id="l4" x="32" y="215" text-anchor="middle" transform="rotate(-90 32 215)">Zone 4</text>
+        <circle class="m-heli" cx="160" cy="168" r="44"/>
+        <text class="m-helih" x="160" y="181" text-anchor="middle">H</text>
+        <text class="m-label" x="160" y="232" text-anchor="middle">Helipad</text>
+
+        <circle class="m-bldg" cx="438" cy="168" r="24"/>
+        <path d="M424 168 a14 14 0 0 1 28 0" fill="none" stroke="#d6cda2" stroke-width="2"/>
+        <line x1="438" y1="168" x2="448" y2="152" stroke="#d6cda2" stroke-width="2"/>
+        <text class="m-label" x="438" y="212" text-anchor="middle">Radar</text>
+
+        <rect class="m-bldg" x="104" y="386" width="64" height="34"/>
+        <rect class="m-bldg" x="104" y="428" width="64" height="34"/>
+        <rect class="m-bldg" x="176" y="386" width="64" height="34"/>
+        <rect class="m-bldg" x="176" y="428" width="64" height="34"/>
+        <text class="m-label" x="172" y="482" text-anchor="middle">Barracks</text>
+
+        <rect class="m-bldg" x="108" y="280" width="66" height="44" style="fill:url(#hatch)"/>
+        <rect x="108" y="280" width="66" height="44" fill="none" stroke="#6a7350" stroke-width="2"/>
+        <text class="m-label" x="141" y="344" text-anchor="middle">Armory</text>
+
+        <rect class="m-bldg" x="372" y="386" width="122" height="78" style="fill:none;stroke-dasharray:6 4"/>
+        <rect class="m-bldg" x="384" y="398" width="26" height="16"/>
+        <rect class="m-bldg" x="420" y="398" width="26" height="16"/>
+        <rect class="m-bldg" x="456" y="398" width="26" height="16"/>
+        <rect class="m-bldg" x="384" y="432" width="26" height="16"/>
+        <rect class="m-bldg" x="420" y="432" width="26" height="16"/>
+        <text class="m-label" x="433" y="484" text-anchor="middle">Motor pool</text>
+
+        <circle class="m-bldg" cx="428" cy="300" r="12"/>
+        <circle class="m-bldg" cx="458" cy="300" r="12"/>
+        <text class="m-label" x="443" y="332" text-anchor="middle">Fuel</text>
+
+        <!-- laser beams: each one runs from a tower's emitter to the next tower's LDR -->
+        <line class="beam unknown" id="b1" x1="78" y1="68" x2="522" y2="68"/>
+        <line class="beam unknown" id="b2" x1="532" y1="78" x2="532" y2="522"/>
+        <line class="beam unknown" id="b3" x1="522" y1="532" x2="78" y2="532"/>
+        <line class="beam unknown" id="b4" x1="68" y1="522" x2="68" y2="78"/>
+        <!-- emitters (red) and sensors (rings) -->
+        <rect class="emit" x="74" y="64" width="8" height="8"/><circle class="sens" cx="522" cy="68" r="5"/>
+        <rect class="emit" x="528" y="74" width="8" height="8"/><circle class="sens" cx="532" cy="522" r="5"/>
+        <rect class="emit" x="518" y="528" width="8" height="8"/><circle class="sens" cx="78" cy="532" r="5"/>
+        <rect class="emit" x="64" y="518" width="8" height="8"/><circle class="sens" cx="68" cy="78" r="5"/>
+
+        <!-- zone labels -->
+        <text class="zl" id="l1" x="300" y="95" text-anchor="middle">Z1 North wall</text>
+        <text class="zl" id="l2" x="510" y="300" text-anchor="middle" transform="rotate(90 510 300)">Z2 East wall</text>
+        <text class="zl" id="l3" x="430" y="520" text-anchor="middle">Z3 South wall</text>
+        <text class="zl" id="l4" x="92" y="300" text-anchor="middle" transform="rotate(-90 92 300)">Z4 West wall</text>
+
+        <!-- watchtowers -->
+        <g>
+          <rect class="m-tower" x="28" y="28" width="44" height="44"/><path class="m-tower-x" d="M28 28 L72 72 M72 28 L28 72"/>
+          <rect class="m-tower" x="528" y="28" width="44" height="44"/><path class="m-tower-x" d="M528 28 L572 72 M572 28 L528 72"/>
+          <rect class="m-tower" x="528" y="528" width="44" height="44"/><path class="m-tower-x" d="M528 528 L572 572 M572 528 L528 572"/>
+          <rect class="m-tower" x="28" y="528" width="44" height="44"/><path class="m-tower-x" d="M28 528 L72 572 M72 528 L28 572"/>
+          <text class="m-tlabel" x="50" y="20" text-anchor="middle">T1</text>
+          <text class="m-tlabel" x="550" y="20" text-anchor="middle">T2</text>
+          <text class="m-tlabel" x="550" y="594" text-anchor="middle">T3</text>
+          <text class="m-tlabel" x="50" y="594" text-anchor="middle">T4</text>
+        </g>
+
+        <!-- breach markers -->
+        <g class="bmark" id="m1"><circle cx="430" cy="68" r="22"/><text x="430" y="104" text-anchor="middle">Breach</text></g>
+        <g class="bmark" id="m2"><circle cx="532" cy="440" r="22"/><text x="506" y="440" text-anchor="middle" transform="rotate(90 506 440)">Breach</text></g>
+        <g class="bmark" id="m3"><circle cx="170" cy="532" r="22"/><text x="170" y="510" text-anchor="middle">Breach</text></g>
+        <g class="bmark" id="m4"><circle cx="68" cy="160" r="22"/><text x="94" y="160" text-anchor="middle" transform="rotate(-90 94 160)">Breach</text></g>
+
+        <!-- compass + scale -->
+        <g transform="translate(584 620)">
+          <path d="M0 -14 L6 6 L0 2 L-6 6 Z" fill="#d6cda2"/>
+          <text x="14" y="6" class="m-coord">N</text>
+        </g>
+        <g transform="translate(0 624)">
+          <line x1="0" y1="0" x2="150" y2="0" stroke="#8e9373" stroke-width="2"/>
+          <line x1="0" y1="-5" x2="0" y2="5" stroke="#8e9373" stroke-width="2"/>
+          <line x1="75" y1="-4" x2="75" y2="4" stroke="#8e9373" stroke-width="2"/>
+          <line x1="150" y1="-5" x2="150" y2="5" stroke="#8e9373" stroke-width="2"/>
+          <text x="160" y="5" class="m-coord">50 cm (model scale)</text>
+        </g>
       </svg>
-      <div class="map-caption">
-        <span class="key"><i style="background:var(--beam-ok)"></i>Beam intact</span>
-        <span class="key"><i style="background:var(--laser)"></i>Beam broken</span>
-        <span class="key"><i style="background:var(--off)"></i>Not aligned, skipped</span>
+      <div class="legend">
+        <span><i style="background:var(--go)"></i>Beam on watch</span>
+        <span><i style="background:var(--laser)"></i>Beam broken</span>
+        <span><i style="background:var(--amber)"></i>Arming</span>
+        <span><i style="background:#5c5f4c"></i>Bypassed (laser not aligned)</span>
       </div>
-    </div>
+    </section>
 
-    <div class="panel">
-      <div class="actions">
-        <button id="alertsBtn">Turn on alerts</button>
-        <button id="silenceBtn" class="danger" hidden>Silence this page</button>
-        <button id="testBtn" class="ghost">Send test alert</button>
-        <button id="settingsBtn" class="ghost">Settings</button>
-      </div>
+    <div class="side">
+      <section class="panel">
+        <h2>Perimeter zones</h2>
+        <table class="zones" id="zones" aria-label="Zone status"></table>
+        <p class="hint" style="margin:10px 0 0">Bars show beam strength at the last report. The amber tick is the trip point.</p>
+      </section>
 
-      <dl class="facts">
-        <dt>Last report</dt><dd id="lastSeen">Never</dd>
-        <dt>Intrusions today</dt><dd id="trips">0</dd>
-        <dt>Wi-Fi signal</dt><dd id="rssi">Unknown</dd>
-      </dl>
+      <section class="panel">
+        <h2>Base link</h2>
+        <dl class="tele">
+          <dt>Base</dt><dd id="baseLink">No contact</dd>
+          <dt>Last report</dt><dd id="lastSeen" class="mono">None</dd>
+          <dt>This screen</dt><dd id="serverLink">Connecting</dd>
+          <dt>Wi-Fi signal</dt><dd id="rssi">Unknown</dd>
+          <dt>Base uptime</dt><dd id="uptime">Unknown</dd>
+          <dt>Breaches today</dt><dd id="trips">0</dd>
+        </dl>
+      </section>
 
-      <h3>Event log</h3>
-      <ul class="log" id="log"><li><span class="empty">Nothing in the last 12 hours.</span></li></ul>
+      <section class="panel">
+        <h2>Controls</h2>
+        <div class="controls">
+          <button class="primary" id="alertsBtn">Turn on alerts</button>
+          <button class="danger" id="silenceBtn" hidden>Silence siren</button>
+          <button id="drillBtn">Run drill</button>
+          <button id="settingsBtn">Settings</button>
+        </div>
+        <p class="hint">The real siren can only be cleared with the reset switch on the base. A drill tests this screen and your phone without touching the base.</p>
+      </section>
     </div>
   </div>
+
+  <section class="panel logwrap">
+    <h2>Incident log</h2>
+    <table class="log">
+      <thead><tr><th>Time</th><th>Event</th><th class="hide-sm">Zone</th><th>Details</th></tr></thead>
+      <tbody id="log"></tbody>
+    </table>
+  </section>
 </div>
 
 <dialog id="settings">
@@ -227,20 +441,33 @@
     <label for="topicIn">Alarm channel name</label>
     <input type="text" id="topicIn" autocomplete="off" spellcheck="false">
     <p class="hint">Must match <b>NTFY_TOPIC</b> in the ESP32 code. Letters, numbers, - and _ only.</p>
-    <label for="nameIn">Base name shown on this page</label>
+    <label for="nameIn">Base name</label>
     <input type="text" id="nameIn" autocomplete="off">
     <p class="err" id="settingsErr"></p>
     <div class="dlg-actions">
-      <button type="button" class="ghost" id="cancelSettings">Cancel</button>
-      <button type="submit" id="saveSettings">Save and reconnect</button>
+      <button type="button" id="cancelSettings">Cancel</button>
+      <button type="submit" class="primary">Save and reconnect</button>
     </div>
   </form>
 </dialog>
 
 <script>
-/* ===== Change this default to the same topic you put in the ESP32 code ===== */
+/* ===== Set this to the same topic you put in the ESP32 code (NTFY_TOPIC) ===== */
 const DEFAULT_TOPIC = "base-alarm-CHANGE-ME-4821";
 const SERVER = "https://ntfy.sh";
+
+const HEARTBEAT_MIN = 10;          // ESP32 reports every 10 min
+const ONLINE_LIMIT  = 12 * 60e3;   // no report for 12 min = not reporting
+const LOST_LIMIT    = 30 * 60e3;   // no report for 30 min = contact lost
+const ARM_DELAY_S   = 5;
+const TRIP_RATIO    = 55;          // matches TRIP_RATIO 0.55 in the firmware
+
+const ZONES = [
+  { id: 1, name: "North wall", span: "T1 to T2", place: "the north wall" },
+  { id: 2, name: "East wall",  span: "T2 to T3", place: "the east wall" },
+  { id: 3, name: "South wall", span: "T3 to T4, main gate", place: "the south wall at the main gate" },
+  { id: 4, name: "West wall",  span: "T4 to T1", place: "the west wall" },
+];
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -248,133 +475,274 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 };
 const params = new URLSearchParams(location.search);
+const validTopic = (t) => /^[-_A-Za-z0-9]{1,57}$/.test(t || "");
 let topic = params.get("topic") || store.get("topic") || DEFAULT_TOPIC;
+if (!validTopic(topic)) topic = DEFAULT_TOPIC;
 let baseName = store.get("baseName") || "Base Alpha";
-const validTopic = (t) => /^[-_A-Za-z0-9]{1,57}$/.test(t);
 
-let es = null, lastId = null, seen = new Set(), events = [];
-let lastSeenTime = 0, latestRssi = null, alertsOn = false, audio = null, siren = null;
-let historyLoaded = false;
+let es = null, lastId = null, seen = new Set(), msgs = [];
+let historyLoaded = false, serverState = "wait";
+let alertsOn = false, audio = null, siren = null, drillUntil = 0, drillZone = 0;
+
+/* ---------- build map grid ---------- */
+(function grid() {
+  const g = $("gridLines"), c = $("gridCoords"), ns = "http://www.w3.org/2000/svg";
+  for (let i = 0; i <= 8; i++) {
+    const p = i * 75;
+    for (const [x1, y1, x2, y2] of [[p, 0, p, 600], [0, p, 600, p]]) {
+      const l = document.createElementNS(ns, "line");
+      l.setAttribute("x1", x1); l.setAttribute("y1", y1); l.setAttribute("x2", x2); l.setAttribute("y2", y2);
+      l.setAttribute("class", "m-grid"); g.appendChild(l);
+    }
+    if (i < 8) {
+      const a = document.createElementNS(ns, "text");
+      a.setAttribute("x", p + 37.5); a.setAttribute("y", -12); a.setAttribute("text-anchor", "middle");
+      a.setAttribute("class", "m-coord"); a.textContent = "ABCDEFGH"[i]; c.appendChild(a);
+      const n = document.createElementNS(ns, "text");
+      n.setAttribute("x", -16); n.setAttribute("y", p + 42); n.setAttribute("text-anchor", "middle");
+      n.setAttribute("class", "m-coord"); n.textContent = i + 1; c.appendChild(n);
+    }
+  }
+})();
 
 /* ---------- parsing ---------- */
 function parse(m) {
-  const tags = m.tags || [];
-  const ev = { id: m.id, time: m.time, text: m.message || "", type: "other", zone: 0, zones: null, rssi: null, trips: null, test: false, status: m.topic && m.topic.endsWith("-status") };
-  for (const t of tags) {
-    if (["intruder", "armed", "reset", "heartbeat"].includes(t)) ev.type = t;
+  const ev = { id: m.id, time: m.time, text: m.message || "", type: "other", zone: 0, zones: null,
+               lvl: null, st: null, rssi: null, trips: null, up: null, test: false };
+  for (const t of m.tags || []) {
+    if (["intruder", "breach", "armed", "reset", "heartbeat", "boot"].includes(t)) ev.type = t;
     else if (t === "test") ev.test = true;
     else if (/^zone-\d$/.test(t)) ev.zone = +t.slice(5);
     else if (/^zones-[OX-]{4}$/.test(t)) ev.zones = t.slice(6);
+    else if (/^lvl-\d+-\d+-\d+-\d+$/.test(t)) ev.lvl = t.slice(4).split("-").map(Number);
+    else if (/^st-(armed|alarm|arming)$/.test(t)) ev.st = t.slice(3);
     else if (/^rssi-?\d+$/.test(t)) ev.rssi = +t.slice(4);
     else if (/^trips-\d+$/.test(t)) ev.trips = +t.slice(6);
+    else if (/^up-\d+$/.test(t)) ev.up = +t.slice(3);
   }
-  if (ev.status && ev.type === "other") ev.type = "heartbeat";
+  if (ev.type === "other" && m.topic && m.topic.endsWith("-status")) ev.type = "heartbeat";
+  if (ev.test) ev.type = "drill";
   return ev;
 }
 
+const RANK = { boot: 0, reset: 1, armed: 2, heartbeat: 3, intruder: 4, breach: 5 };   // order for same-second messages
 function handle(m, live) {
-  if (!m || m.event && m.event !== "message") return;
-  if (seen.has(m.id)) return;
+  if (!m || (m.event && m.event !== "message") || seen.has(m.id)) return;
   seen.add(m.id); lastId = m.id;
   const ev = parse(m);
-  lastSeenTime = Math.max(lastSeenTime, ev.time * 1000);
-  if (ev.type !== "heartbeat") {
-    events.push(ev);
-    events.sort((a, b) => a.time - b.time);
+  msgs.push(ev);
+  msgs.sort((a, b) => a.time - b.time || (RANK[a.type] ?? 9) - (RANK[b.type] ?? 9));
+  if (live) {
+    if (ev.type === "intruder" || ev.type === "breach") raiseAlarm(ev);
+    if (ev.type === "reset" || ev.type === "armed") stopSiren();
+    if (ev.type === "drill") startDrill(ev);
   }
-  if (ev.rssi !== null) latestRssi = ev.rssi;
   render();
-  if (live && ev.type === "intruder") raiseAlarm(ev);
-  if (live && (ev.type === "reset" || ev.type === "armed")) stopSiren();
+}
+
+/* ---------- state ---------- */
+function computeState() {
+  const real = msgs.filter((e) => e.type !== "drill");
+  const main = real.filter((e) => ["intruder", "breach", "armed", "reset", "boot"].includes(e.type));
+  const last = main[main.length - 1];
+  const tele = [...real].reverse().find((e) => e.lvl || e.zones);
+  const lastHeard = real.length ? real[real.length - 1].time * 1000 : 0;
+
+  let mode = "none", since = 0, cause = null;
+  if (last) {
+    since = last.time; cause = last.type;
+    mode = (last.type === "intruder" || last.type === "breach") ? "breach"
+         : (last.type === "reset" || last.type === "boot") ? "arming" : "secure";
+  }
+  // a newer report from the base wins (covers anything this screen missed)
+  if (tele && tele.st && (!last || tele.time > last.time)) {
+    const m2 = tele.st === "alarm" ? "breach" : tele.st === "armed" ? "secure" : "arming";
+    if (m2 !== mode) { mode = m2; since = tele.time; cause = "report"; }
+  }
+
+  // which zones are breached in the current alarm
+  const breached = new Set();
+  let alarmStart = 0, firstZone = 0;
+  if (mode === "breach") {
+    let i = main.length - 1;
+    while (i >= 0 && (main[i].type === "intruder" || main[i].type === "breach")) {
+      breached.add(main[i].zone);
+      if (main[i].type === "intruder") { alarmStart = main[i].time; firstZone = main[i].zone; }
+      i--;
+    }
+    if (!alarmStart && i < main.length - 1) alarmStart = main[i + 1].time;
+    if (!alarmStart) alarmStart = since;
+    if (tele && tele.zones && tele.time >= alarmStart) {
+      [...tele.zones].forEach((c, k) => { if (c === "X") breached.add(k + 1); });
+    }
+    breached.delete(0);
+  }
+
+  let armedSince = 0;
+  if (mode === "secure") {
+    const a = [...main].reverse().find((e) => e.type === "armed");
+    armedSince = a ? a.time : since;
+  }
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const tripsToday = real.filter((e) => e.type === "intruder" && e.time * 1000 >= today.getTime()).length;
+  return { mode, since, cause, breached, alarmStart, firstZone, armedSince, tele, lastHeard, tripsToday };
+}
+
+/* ---------- formatting ---------- */
+const pad = (n) => String(n).padStart(2, "0");
+function hms(sec) { const d = new Date(sec * 1000); return pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()); }
+function stamp(sec) {
+  const d = new Date(sec * 1000), now = new Date();
+  const same = d.toDateString() === now.toDateString();
+  return same ? hms(sec) : d.toLocaleDateString([], { day: "2-digit", month: "short" }) + " " + hms(sec);
+}
+function dur(ms) {
+  let s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600); s -= h * 3600;
+  const m = Math.floor(s / 60); s -= m * 60;
+  return h ? h + "h " + m + "m" : m ? m + "m " + pad(s) + "s" : s + "s";
+}
+function zoneList(ids) {
+  const a = [...ids].sort();
+  return a.length < 2 ? String(a[0]) : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
 }
 
 /* ---------- rendering ---------- */
-
-function fmtTime(sec) {
-  return new Date(sec * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-function ago(ms) {
-  const s = Math.round((Date.now() - ms) / 1000);
-  if (s < 60) return "Just now";
-  const m = Math.round(s / 60);
-  if (m < 60) return m + (m === 1 ? " minute ago" : " minutes ago");
-  const h = Math.round(m / 60);
-  return h + (h === 1 ? " hour ago" : " hours ago");
+let logKey = null;
+const htmlCache = {};
+function setHTML(id, html) { if (htmlCache[id] !== html) { htmlCache[id] = html; $(id).innerHTML = html; } }
+function setThreat(level) {
+  $("lampGo").classList.toggle("on", level === "go");
+  $("lampAmber").classList.toggle("on", level === "amber");
+  $("lampRed").classList.toggle("on", level === "red");
 }
 
 function render() {
+  const s = computeState();
+  const now = Date.now();
+  const age = s.lastHeard ? now - s.lastHeard : Infinity;
+  const linkState = !s.lastHeard ? "none" : age <= ONLINE_LIMIT ? "online" : age <= LOST_LIMIT ? "late" : "lost";
+
   $("baseName").textContent = baseName;
-  document.title = baseName + " perimeter";
+  document.title = (s.mode === "breach" ? "BREACH | " : "") + baseName + " Perimeter Command";
+  document.body.classList.toggle("is-breach", s.mode === "breach");
 
-  const last = [...events].reverse().find((e) => ["intruder", "armed", "reset"].includes(e.type));
-  const st = $("status");
-  st.className = "status";
-  let zones = last && last.zones ? last.zones : null;
-
-  if (!last) {
-    $("headline").textContent = "Waiting for the base";
-    $("subline").textContent = historyLoaded
-      ? "No reports in the last 12 hours. Power on the ESP32 and it will check in here once it's armed."
-      : "Loading recent reports.";
-  } else if (last.type === "intruder") {
-    st.classList.add("is-alarm");
-    $("headline").textContent = (last.test ? "Test: " : "") + "Intruder at zone " + last.zone;
-    $("subline").textContent = "Beam broken at " + fmtTime(last.time) + ". The siren stays on until a guard presses the reset switch on the panel.";
-    if (!zones || last.test) zones = ["1","2","3","4"].map((z) => (+z === last.zone ? "X" : "O")).join("");
-  } else if (last.type === "reset") {
-    st.classList.add("is-arming");
-    $("headline").textContent = "Re-arming";
-    $("subline").textContent = "Alarm cleared at " + fmtTime(last.time) + ". The base arms itself again in 5 seconds.";
-    zones = null;
+  /* condition banner */
+  const cond = $("condition");
+  cond.className = "panel condition";
+  let head, sub;
+  if (s.mode === "none") {
+    head = "Awaiting base";
+    sub = historyLoaded ? "No reports in the last 12 hours. Power on the ESP32; it reports here as soon as it boots."
+                        : "Loading recent reports.";
+    cond.classList.add("caution"); setThreat("amber");
+  } else if (s.mode === "breach") {
+    const z = [...s.breached];
+    head = z.length > 1 ? "Breach: zones " + zoneList(z) : "Breach at zone " + (z[0] || "?");
+    const first = ZONES.find((q) => q.id === (s.firstZone || z[0]));
+    sub = "Intruder crossed " + (first ? first.place : "the perimeter") + " at <b class=mono>" + hms(s.alarmStart) +
+          "</b>, " + dur(now - s.alarmStart * 1000) + " ago. The siren stays on until a guard presses the reset switch.";
+    cond.classList.add("breach"); setThreat("red");
+  } else if (s.mode === "arming") {
+    const left = Math.ceil(ARM_DELAY_S - (now / 1000 - s.since));
+    if (s.cause === "boot") {
+      head = "Calibrating";
+      sub = "Base powered on at <b class=mono>" + hms(s.since) + "</b>. It is measuring the four lasers and will report when armed.";
+    } else {
+      head = "Re-arming";
+      sub = "Alarm cleared by a guard at <b class=mono>" + hms(s.since) + "</b>. " +
+            (left > 0 ? "Arming in " + left + " s." : "Waiting for the base to confirm it is armed.");
+    }
+    cond.classList.add("caution"); setThreat("amber");
   } else {
-    const active = zones ? [...zones].filter((c) => c !== "-").length : 4;
-    $("headline").textContent = "All beams intact";
-    $("subline").textContent = "Armed since " + fmtTime(last.time) + " with " + active + " of 4 laser zones watching.";
+    const zs = s.tele && s.tele.zones ? s.tele.zones : "OOOO";
+    const active = [...zs].filter((c) => c !== "-").length;
+    head = "Perimeter secure";
+    sub = "Armed since <b class=mono>" + hms(s.armedSince) + "</b>. " + active + " of 4 laser zones on watch.";
+    if (active < 4) sub += " Bypassed zones need their laser re-aimed, then hold reset 3 s.";
+    cond.classList.add("secure"); setThreat("go");
+    if (linkState === "late" || linkState === "lost") {
+      cond.className = "panel condition caution"; setThreat("amber");
+      head = linkState === "lost" ? "Contact lost" : "Base not reporting";
+      sub = "Last report " + dur(age) + " ago (it should report every " + HEARTBEAT_MIN +
+            " min). Check the base's power and Wi-Fi. Its alarm still works without the internet.";
+    }
   }
-  document.body.classList.toggle("alarm", !!last && last.type === "intruder");
+  $("headline").textContent = head;
+  $("subline").innerHTML = sub;
 
-  for (let i = 1; i <= 4; i++) {
-    const c = zones ? zones[i - 1] : null;
-    const cls = c === "X" ? "tripped" : c === "-" ? "off" : c === "O" ? "" : "unknown";
-    $("b" + i).setAttribute("class", "beam " + cls);
-    $("s" + i).setAttribute("class", "sensor" + (c === "X" ? " tripped" : ""));
-    $("l" + i).setAttribute("class", "zlabel" + (c === "X" ? " tripped" : ""));
-  }
+  /* zones: map + table */
+  const zs = s.tele && s.tele.zones;
+  const rows = [];
+  ZONES.forEach((z, i) => {
+    let st;
+    if (s.mode === "breach" && s.breached.has(z.id)) st = "breach";
+    else if (zs && zs[i] === "-" && s.mode !== "arming") st = "off";
+    else if (s.mode === "none") st = "nodata";
+    else if (s.mode === "arming") st = "arming";
+    else st = "secure";
 
-  $("lastSeen").textContent = lastSeenTime ? ago(lastSeenTime) : "Never";
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  $("trips").textContent = events.filter((e) => e.type === "intruder" && !e.test && e.time * 1000 >= today.getTime()).length;
-  $("rssi").textContent = latestRssi === null ? "Unknown" :
-    latestRssi + " dBm (" + (latestRssi > -60 ? "strong" : latestRssi > -75 ? "fair" : "weak") + ")";
+    $("b" + z.id).setAttribute("class", "beam " + (st === "secure" ? "" : st === "nodata" ? "unknown" : st));
+    $("l" + z.id).setAttribute("class", "zl" + (st === "breach" ? " breach" : ""));
+    $("m" + z.id).setAttribute("class", "bmark" + (st === "breach" ? " show" : ""));
 
-  const log = $("log");
-  log.textContent = "";
-  const list = [...events].reverse().slice(0, 40);
-  if (!list.length) {
-    const li = document.createElement("li");
-    li.innerHTML = '<span class="empty">Nothing in the last 12 hours.</span>';
-    log.appendChild(li);
-  }
+    const pct = s.tele && s.tele.lvl && st !== "off" ? s.tele.lvl[i] : null;
+    const label = { breach: "Breach", off: "Bypassed", nodata: "No data", arming: "Arming", secure: "Secure" }[st];
+    rows.push(
+      '<tr><td class="zid">Z' + z.id + '</td>' +
+      '<td class="zname">' + z.name + '<small>' + z.span + '</small></td>' +
+      '<td style="width:30%"><div class="meter"><span style="width:' + (pct ?? 0) + '%;' +
+        (pct !== null && pct < TRIP_RATIO ? 'background:var(--laser)' : '') + '"></span><i class="trip"></i></div></td>' +
+      '<td class="pct mono">' + (pct === null ? "--" : pct + "%") + '</td>' +
+      '<td><span class="chip c-' + st + '">' + label + '</span></td></tr>');
+  });
+  setHTML("zones", rows.join(""));
+
+  /* base link */
+  const link = $("baseLink");
+  link.textContent = { none: "No contact", online: "Online", late: "Not reporting", lost: "Contact lost" }[linkState];
+  link.className = { none: "warn", online: "ok", late: "warn", lost: "bad" }[linkState];
+  $("lastSeen").textContent = s.lastHeard ? stamp(s.lastHeard / 1000) + " (" + dur(age) + " ago)" : "None";
+  const sl = $("serverLink");
+  sl.textContent = serverState === "on" ? "Live, receiving reports" : serverState === "wait" ? "Connecting" : "Reconnecting";
+  sl.className = serverState === "on" ? "ok" : "warn";
+  const r = s.tele ? [...msgs].reverse().find((e) => e.rssi !== null && e.type !== "drill") : null;
+  $("rssi").textContent = r ? r.rssi + " dBm, " + (r.rssi > -60 ? "strong" : r.rssi > -75 ? "fair" : "weak") : "Unknown";
+  const up = [...msgs].reverse().find((e) => e.up !== null && e.type !== "drill");
+  $("uptime").textContent = up ? dur((up.up * 60 + (now / 1000 - up.time)) * 1000) : "Unknown";
+  $("trips").textContent = s.tripsToday;
+
+  /* drill banner */
+  const dr = $("drill");
+  if (now < drillUntil) { dr.classList.add("show"); dr.textContent = "Drill in progress: simulated breach at zone " + drillZone + ". This is not a real intruder."; }
+  else dr.classList.remove("show");
+
+  /* incident log */
+  const names = { intruder: "Intruder", breach: "Second breach", armed: "Armed", reset: "Reset by guard", boot: "Power on", drill: "Drill" };
+  const list = msgs.filter((e) => names[e.type]).reverse().slice(0, 60);
+  const key = list.map((e) => e.id).join() + "|" + new Date().toDateString();
+  if (key === logKey) return;
+  logKey = key;
+  $("log").innerHTML = list.length ? "" :
+    '<tr><td colspan="4" class="empty">No incidents in the last 12 hours.</td></tr>';
   for (const e of list) {
-    const li = document.createElement("li");
-    const t = document.createElement("time");
-    t.textContent = fmtTime(e.time);
-    const d = document.createElement("div");
-    const title = { intruder: "Intruder at zone " + e.zone, armed: "Base armed", reset: "Alarm reset by guard" }[e.type] || "Message";
-    d.innerHTML = '<span class="t-' + e.type + '"></span><small></small>';
-    d.firstChild.textContent = (e.test ? "Test: " : "") + title;
-    d.lastChild.textContent = e.text;
-    li.append(t, d);
-    log.appendChild(li);
+    const tr = document.createElement("tr");
+    const zone = e.zone ? "Z" + e.zone + " " + ZONES[e.zone - 1].name : "";
+    tr.innerHTML = '<td class="time mono"></td><td class="ev e-' + e.type + '"></td><td class="hide-sm"></td><td></td>';
+    tr.children[0].textContent = stamp(e.time);
+    tr.children[1].textContent = names[e.type];
+    tr.children[2].textContent = zone;
+    tr.children[3].textContent = e.text;
+    $("log").appendChild(tr);
   }
 }
 
-/* ---------- alerts ---------- */
+/* ---------- siren + notifications ---------- */
 function startSiren() {
   if (!audio || siren) return;
   const osc = audio.createOscillator(), gain = audio.createGain(), lfo = audio.createOscillator(), lfoGain = audio.createGain();
   osc.type = "sawtooth"; osc.frequency.value = 1100;
-  lfo.frequency.value = 1.2; lfoGain.gain.value = 450;
+  lfo.frequency.value = 1.3; lfoGain.gain.value = 450;
   lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
   gain.gain.value = 0.12;
   osc.connect(gain); gain.connect(audio.destination);
@@ -383,18 +751,22 @@ function startSiren() {
   $("silenceBtn").hidden = false;
 }
 function stopSiren() {
-  if (siren) { siren.osc.stop(); siren.lfo.stop(); siren = null; }
+  if (siren) { try { siren.osc.stop(); siren.lfo.stop(); } catch (e) {} siren = null; }
   $("silenceBtn").hidden = true;
 }
-function raiseAlarm(ev) {
-  const msg = (ev.test ? "Test alert: " : "") + "laser zone " + ev.zone + " broken at " + fmtTime(ev.time);
-  if (alertsOn) {
-    startSiren();
-    if ("Notification" in window && Notification.permission === "granted") {
-      try { new Notification("Intruder at " + baseName, { body: msg, tag: "base-alarm", requireInteraction: true }); } catch (e) {}
-    }
+function notify(title, body) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    try { new Notification(title, { body, tag: "base-alarm", requireInteraction: true }); } catch (e) {}
   }
+}
+function raiseAlarm(ev) {
+  const z = ZONES[ev.zone - 1];
+  if (alertsOn) { startSiren(); notify("BREACH at " + baseName, "Zone " + ev.zone + (z ? " " + z.name : "") + " broken at " + hms(ev.time)); }
   if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 400]);
+}
+function startDrill(ev) {
+  drillUntil = Date.now() + 20000; drillZone = ev.zone || 1;
+  if (alertsOn) { startSiren(); notify("Drill at " + baseName, "Simulated breach at zone " + drillZone); setTimeout(stopSiren, 8000); }
 }
 
 $("alertsBtn").addEventListener("click", async () => {
@@ -408,28 +780,23 @@ $("alertsBtn").addEventListener("click", async () => {
 });
 $("silenceBtn").addEventListener("click", stopSiren);
 
-$("testBtn").addEventListener("click", async () => {
+$("drillBtn").addEventListener("click", async () => {
   const zone = 1 + Math.floor(Math.random() * 4);
-  $("testBtn").disabled = true;
+  $("drillBtn").disabled = true;
   try {
     await fetch(SERVER, {
       method: "POST",
       body: JSON.stringify({
-        topic, title: baseName, priority: 4,
-        message: "Test alert from the website. Zone " + zone + " (no real intruder).",
-        tags: ["test_tube", "intruder", "test", "zone-" + zone]
+        topic, title: baseName + " drill", priority: 4,
+        message: "Drill: simulated breach at zone " + zone + ". Not a real intruder.",
+        tags: ["test_tube", "test", "zone-" + zone]
       })
     });
   } catch (e) {}
-  setTimeout(() => ($("testBtn").disabled = false), 3000);
+  setTimeout(() => ($("drillBtn").disabled = false), 5000);
 });
 
 /* ---------- connection ---------- */
-function setLink(state, text) {
-  $("lamp").className = "lamp" + (state === "on" ? " on" : state === "wait" ? " wait" : "");
-  $("linkText").textContent = text;
-}
-
 async function poll(since) {
   const url = SERVER + "/" + topic + "," + topic + "-status/json?poll=1&since=" + encodeURIComponent(since);
   try {
@@ -444,9 +811,8 @@ async function poll(since) {
 
 async function connect() {
   if (es) { es.close(); es = null; }
-  events = []; seen = new Set(); lastId = null; lastSeenTime = 0; latestRssi = null; historyLoaded = false;
+  msgs = []; seen = new Set(); lastId = null; historyLoaded = false; serverState = "wait"; logKey = null;
   render();
-  setLink("wait", "Connecting");
   await poll("12h");
   historyLoaded = true;
   render();
@@ -454,11 +820,12 @@ async function connect() {
   es = new EventSource(SERVER + "/" + topic + "," + topic + "-status/sse");
   let hadError = false;
   es.onopen = () => {
-    setLink("on", "Live");
+    serverState = "on";
     if (hadError && lastId) poll(lastId);   // catch up on anything missed while offline
     hadError = false;
+    render();
   };
-  es.onerror = () => { hadError = true; setLink("wait", "Reconnecting"); };
+  es.onerror = () => { hadError = true; serverState = "retry"; render(); };
   es.onmessage = (e) => { try { handle(JSON.parse(e.data), true); } catch (err) {} };
 }
 
@@ -480,9 +847,14 @@ $("settingsForm").addEventListener("submit", (e) => {
   connect();
 });
 
-setInterval(() => { $("lastSeen").textContent = lastSeenTime ? ago(lastSeenTime) : "Never"; }, 30000);
-
-if (!validTopic(topic)) topic = DEFAULT_TOPIC;
+/* ---------- clock (1 s tick also keeps timers accurate) ---------- */
+function tick() {
+  const d = new Date();
+  $("clock").textContent = pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  $("date").textContent = d.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
+}
+tick();
+setInterval(() => { tick(); render(); }, 1000);
 connect();
 </script>
 </body>

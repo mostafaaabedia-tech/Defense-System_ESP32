@@ -202,8 +202,7 @@ the hardware (they always show as drills, never as real alerts).
 | Part | What it tells you |
 |---|---|
 | Condition banner + lamps | **Secure**, **Caution** (radar contact, arming, or base not reporting) or **Breach** with the zones and how long ago |
-| Tactical map | The base with 4 watchtowers; each laser runs tower to tower along a wall. Broken beams turn red; the radar building pulses during a contact |
-| Radar | A radar scope with the base's reported contacts (fading over 3 minutes), the contact's distance and direction, contacts today |
+| Tactical map + radar | The base with 4 watchtowers; each laser runs tower to tower along a wall, broken beams turn red. The radar sweeps from the radar building (facing north, 3 px = 1 cm like the scale bar) and its contacts appear right on the map, fading over 3 minutes. Below the map: radar status, current contact, last contact, contacts today |
 | Perimeter zones | Each zone's beam strength (% of its calibrated brightness) at the last report, and its status |
 | Base link | Whether the ESP32 is online, last report time, Wi-Fi signal, uptime, breaches today |
 | Incident log | Every power-on, arm, breach, radar contact, radar clear, reset and drill from the last 12 hours |
@@ -211,7 +210,7 @@ the hardware (they always show as drills, never as real alerts).
 If no report arrives for 17 minutes the page switches to **Base not reporting**, and after 35 minutes to **Contact lost**,
 so you can tell the difference between "all quiet" and "the base is switched off".
 
-The sweeping line on the website shows how the radar moves. It isn't the servo's exact live position
+On the website map the radar faces north (90° = toward zone 1). The sweeping line shows how the radar moves. It isn't the servo's exact live position
 (sending that every 50 ms would use up the free message limit in minutes), but the dots are real contacts reported by the base.
 
 ### Alerts on your phone, even with the website closed

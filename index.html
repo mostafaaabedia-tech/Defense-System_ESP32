@@ -202,6 +202,30 @@
   .e-armed { color: var(--go); }
   .e-reset, .e-boot { color: var(--amber); }
   .e-drill { color: var(--hazard); }
+  .e-radar { color: var(--amber); }
+  .e-radarclear { color: var(--go); }
+
+  /* ---------- radar scope ---------- */
+  .leftcol { display: grid; gap: 16px; }
+  .radar-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 14px 20px; align-items: center; }
+  @media (max-width: 640px) { .radar-grid { grid-template-columns: 1fr; } }
+  .radar svg { width: 100%; height: auto; display: block; }
+  .sc-bg { fill: #121a0e; stroke: var(--go); stroke-width: 2; }
+  .sc-ring { fill: none; stroke: rgba(139, 181, 83, .35); stroke-width: 1.2; stroke-dasharray: 3 5; }
+  .sc-spoke { stroke: rgba(139, 181, 83, .25); stroke-width: 1; }
+  .sc-lbl { fill: var(--dim); font: 13px "Share Tech Mono", monospace; }
+  .sc-sweep { stroke: var(--go); stroke-width: 2.5; filter: drop-shadow(0 0 5px var(--go)); }
+  .sc-trail { fill: var(--go); opacity: .13; }
+  body.is-breach .sc-sweep { stroke: var(--laser); filter: drop-shadow(0 0 5px var(--laser)); }
+  body.is-breach .sc-trail { fill: var(--laser); }
+  .blip { fill: var(--amber); }
+  .blip.now { fill: var(--laser); }
+  .blip-ring { fill: none; stroke: var(--laser); stroke-width: 2.5; animation: ping 1.2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+  .blip-lbl { fill: var(--khaki); font: 800 15px "Big Shoulders Text", sans-serif; }
+  .blip.dz { fill: var(--hazard); }
+  .blip-ring.dz { stroke: var(--hazard); }
+  .r-ring { fill: none; stroke: var(--amber); stroke-width: 3; opacity: 0; }
+  .r-ring.on { opacity: 1; animation: ping 1.2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
   .log .empty { color: var(--dim); padding: 14px 8px; }
   @media (max-width: 640px) { .log .hide-sm { display: none; } }
 
@@ -262,6 +286,7 @@
   <div class="drill" id="drill" role="status"></div>
 
   <div class="grid">
+   <div class="leftcol">
     <section class="panel map" aria-label="Tactical map">
       <h2>Tactical map</h2>
       <svg viewBox="-34 -30 668 676" role="img" aria-label="Map of the base. Four laser beams run between the four corner watchtowers.">
@@ -312,6 +337,7 @@
         <text class="m-label" x="160" y="232" text-anchor="middle">Helipad</text>
 
         <circle class="m-bldg" cx="438" cy="168" r="24"/>
+        <circle class="r-ring" id="radarRing" cx="438" cy="168" r="30"/>
         <path d="M424 168 a14 14 0 0 1 28 0" fill="none" stroke="#d6cda2" stroke-width="2"/>
         <line x1="438" y1="168" x2="448" y2="152" stroke="#d6cda2" stroke-width="2"/>
         <text class="m-label" x="438" y="212" text-anchor="middle">Radar</text>
@@ -394,6 +420,28 @@
       </div>
     </section>
 
+    <section class="panel radar" aria-label="Radar">
+      <h2>Radar</h2>
+      <div class="radar-grid">
+        <svg viewBox="-16 -26 432 260" role="img" aria-label="Radar scope. Objects the base reported are shown as dots.">
+          <path class="sc-bg" d="M10 210 A190 190 0 0 1 390 210 Z"/>
+          <g id="scopeRings"></g>
+          <path id="sweepTrail" class="sc-trail" d=""/>
+          <line id="sweepLine" class="sc-sweep" x1="200" y1="210" x2="390" y2="210"/>
+          <g id="scopeBlips"></g>
+        </svg>
+        <dl class="tele">
+          <dt>Radar</dt><dd id="rdrState">No data</dd>
+          <dt>Contact</dt><dd id="rdrContact">None</dd>
+          <dt>Last contact</dt><dd id="rdrLast" class="mono">None</dd>
+          <dt>Contacts today</dt><dd id="rdrToday">0</dd>
+          <dt>Range</dt><dd id="rdrRange">50 cm</dd>
+        </dl>
+      </div>
+      <p class="hint">Dots are new objects the base reported in the last 3 minutes. They fade as they get older. The sweeping line moves the way the servo does.</p>
+    </section>
+   </div>
+
     <div class="side">
       <section class="panel">
         <h2>Perimeter zones</h2>
@@ -418,7 +466,8 @@
         <div class="controls">
           <button class="primary" id="alertsBtn">Turn on alerts</button>
           <button class="danger" id="silenceBtn" hidden>Silence siren</button>
-          <button id="drillBtn">Run drill</button>
+          <button id="drillBtn">Breach drill</button>
+          <button id="radarDrillBtn">Radar drill</button>
           <button id="settingsBtn">Settings</button>
         </div>
         <p class="hint">The real siren can only be cleared with the reset switch on the base. A drill tests this screen and your phone without touching the base.</p>
@@ -456,9 +505,12 @@
 const DEFAULT_TOPIC = "base-alarm-CHANGE-ME-4821";
 const SERVER = "https://ntfy.sh";
 
-const HEARTBEAT_MIN = 10;          // ESP32 reports every 10 min
-const ONLINE_LIMIT  = 12 * 60e3;   // no report for 12 min = not reporting
-const LOST_LIMIT    = 30 * 60e3;   // no report for 30 min = contact lost
+const HEARTBEAT_MIN = 15;          // ESP32 reports every 15 min
+const ONLINE_LIMIT  = 17 * 60e3;   // no report for 17 min = not reporting
+const LOST_LIMIT    = 35 * 60e3;   // no report for 35 min = contact lost
+const RADAR_FRESH   = 4 * 60e3;    // the base re-reports a contact every 3 min while it stays
+const BLIP_LIFE     = 3 * 60e3;    // how long dots stay on the scope
+const SWEEP_PERIOD  = 6.1;         // seconds for the servo to go 0 -> 180 -> 0
 const ARM_DELAY_S   = 5;
 const TRIP_RATIO    = 55;          // matches TRIP_RATIO 0.55 in the firmware
 
@@ -482,7 +534,7 @@ let baseName = store.get("baseName") || "Base Alpha";
 
 let es = null, lastId = null, seen = new Set(), msgs = [];
 let historyLoaded = false, serverState = "wait";
-let alertsOn = false, audio = null, siren = null, drillUntil = 0, drillZone = 0;
+let alertsOn = false, audio = null, siren = null, drillUntil = 0, drillZone = 0, drillKind = "breach", drillRadar = { a: 90, d: 25 };
 
 /* ---------- build map grid ---------- */
 (function grid() {
@@ -508,9 +560,15 @@ let alertsOn = false, audio = null, siren = null, drillUntil = 0, drillZone = 0;
 /* ---------- parsing ---------- */
 function parse(m) {
   const ev = { id: m.id, time: m.time, text: m.message || "", type: "other", zone: 0, zones: null,
-               lvl: null, st: null, rssi: null, trips: null, up: null, test: false };
+               lvl: null, st: null, rssi: null, trips: null, up: null, test: false,
+               rdr: null, rng: null, rc: null, rad: null, rb: [] };
   for (const t of m.tags || []) {
-    if (["intruder", "breach", "armed", "reset", "heartbeat", "boot"].includes(t)) ev.type = t;
+    if (["intruder", "breach", "armed", "reset", "heartbeat", "boot", "radar", "radarclear"].includes(t)) ev.type = t;
+    else if (/^rdr-(on|learn|off)$/.test(t)) ev.rdr = t.slice(4);
+    else if (/^rng-\d+$/.test(t)) ev.rng = +t.slice(4);
+    else if (/^rc-[01]$/.test(t)) ev.rc = +t.slice(3);
+    else if (/^rad-\d+-\d+$/.test(t)) { const [a, d] = t.slice(4).split("-").map(Number); ev.rad = { a, d }; }
+    else if (/^rb(-\d+x\d+)+$/.test(t)) ev.rb = t.slice(3).split("-").map((p) => { const [a, d] = p.split("x").map(Number); return { a, d }; });
     else if (t === "test") ev.test = true;
     else if (/^zone-\d$/.test(t)) ev.zone = +t.slice(5);
     else if (/^zones-[OX-]{4}$/.test(t)) ev.zones = t.slice(6);
@@ -521,11 +579,11 @@ function parse(m) {
     else if (/^up-\d+$/.test(t)) ev.up = +t.slice(3);
   }
   if (ev.type === "other" && m.topic && m.topic.endsWith("-status")) ev.type = "heartbeat";
-  if (ev.test) ev.type = "drill";
+  if (ev.test) { ev.drillKind = ev.type === "radar" ? "radar" : "breach"; ev.type = "drill"; }
   return ev;
 }
 
-const RANK = { boot: 0, reset: 1, armed: 2, heartbeat: 3, intruder: 4, breach: 5 };   // order for same-second messages
+const RANK = { boot: 0, reset: 1, armed: 2, heartbeat: 3, intruder: 4, breach: 5, radar: 6, radarclear: 7 };   // order for same-second messages
 function handle(m, live) {
   if (!m || (m.event && m.event !== "message") || seen.has(m.id)) return;
   seen.add(m.id); lastId = m.id;
@@ -536,6 +594,7 @@ function handle(m, live) {
     if (ev.type === "intruder" || ev.type === "breach") raiseAlarm(ev);
     if (ev.type === "reset" || ev.type === "armed") stopSiren();
     if (ev.type === "drill") startDrill(ev);
+    if (ev.type === "radar" && !/still/i.test(ev.text)) radarAlert(ev);
   }
   render();
 }
@@ -585,7 +644,34 @@ function computeState() {
   }
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const tripsToday = real.filter((e) => e.type === "intruder" && e.time * 1000 >= today.getTime()).length;
-  return { mode, since, cause, breached, alarmStart, firstZone, armedSince, tele, lastHeard, tripsToday };
+  // radar
+  const nowMs = Date.now();
+  const rinfo = real.filter((e) => e.rc !== null || e.type === "radar" || e.type === "radarclear");
+  const rl = rinfo[rinfo.length - 1];
+  const rs = [...real].reverse().find((e) => e.rdr);
+  const rg = [...real].reverse().find((e) => e.rng);
+  const radar = {
+    status: rs ? rs.rdr : null,
+    statusAt: rs ? rs.time : 0,
+    range: rg ? rg.rng : 50,
+    active: !!rl && rl.type !== "radarclear" && (rl.type === "radar" || rl.rc === 1) && nowMs - rl.time * 1000 < RADAR_FRESH,
+    contact: null, firstSeen: 0, lastContact: 0, today: 0, blips: []
+  };
+  const rEvents = real.filter((e) => e.type === "radar");
+  if (rEvents.length) radar.lastContact = rEvents[rEvents.length - 1].time;
+  if (radar.active) {
+    const withPos = [...rinfo].reverse().find((e) => e.rad);
+    radar.contact = withPos ? withPos.rad : null;
+    for (let i = rinfo.length - 1; i >= 0 && rinfo[i].type !== "radarclear"; i--) if (rinfo[i].type === "radar") radar.firstSeen = rinfo[i].time;
+  }
+  radar.today = rEvents.filter((e) => !/still/i.test(e.text) && e.time * 1000 >= today.getTime()).length;
+  for (const e of real) {
+    const age = nowMs - e.time * 1000;
+    if (age > BLIP_LIFE) continue;
+    if (e.rad) radar.blips.push({ a: e.rad.a, d: e.rad.d, age, main: true });
+    for (const b of e.rb) radar.blips.push({ a: b.a, d: b.d, age, main: false });
+  }
+  return { mode, since, cause, breached, alarmStart, firstZone, armedSince, tele, lastHeard, tripsToday, radar };
 }
 
 /* ---------- formatting ---------- */
@@ -642,6 +728,7 @@ function render() {
     const first = ZONES.find((q) => q.id === (s.firstZone || z[0]));
     sub = "Intruder crossed " + (first ? first.place : "the perimeter") + " at <b class=mono>" + hms(s.alarmStart) +
           "</b>, " + dur(now - s.alarmStart * 1000) + " ago. The siren stays on until a guard presses the reset switch.";
+    if (s.radar.active && s.radar.contact) sub += " Radar is also tracking an object <b>" + s.radar.contact.d + " cm</b> away at " + s.radar.contact.a + "°.";
     cond.classList.add("breach"); setThreat("red");
   } else if (s.mode === "arming") {
     const left = Math.ceil(ARM_DELAY_S - (now / 1000 - s.since));
@@ -661,6 +748,13 @@ function render() {
     sub = "Armed since <b class=mono>" + hms(s.armedSince) + "</b>. " + active + " of 4 laser zones on watch.";
     if (active < 4) sub += " Bypassed zones need their laser re-aimed, then hold reset 3 s.";
     cond.classList.add("secure"); setThreat("go");
+    if (s.radar.active) {
+      cond.className = "panel condition caution"; setThreat("amber");
+      head = "Radar contact";
+      const c = s.radar.contact;
+      sub = (c ? "Object <b>" + c.d + " cm</b> from the radar at " + c.a + "° (" + bearingWord(c.a) + "), " : "Object near the base, ") +
+            "first seen <b class=mono>" + hms(s.radar.firstSeen || s.radar.lastContact) + "</b>. All laser beams are still intact.";
+    }
     if (linkState === "late" || linkState === "lost") {
       cond.className = "panel condition caution"; setThreat("amber");
       head = linkState === "lost" ? "Contact lost" : "Base not reporting";
@@ -712,13 +806,21 @@ function render() {
   $("uptime").textContent = up ? dur((up.up * 60 + (now / 1000 - up.time)) * 1000) : "Unknown";
   $("trips").textContent = s.tripsToday;
 
+  /* radar */
+  renderRadar(s.radar, now, linkState);
+
   /* drill banner */
   const dr = $("drill");
-  if (now < drillUntil) { dr.classList.add("show"); dr.textContent = "Drill in progress: simulated breach at zone " + drillZone + ". This is not a real intruder."; }
-  else dr.classList.remove("show");
+  if (now < drillUntil) {
+    dr.classList.add("show");
+    dr.textContent = drillKind === "radar"
+      ? "Drill in progress: simulated radar contact " + drillRadar.d + " cm away at " + drillRadar.a + "°. This is not a real object."
+      : "Drill in progress: simulated breach at zone " + drillZone + ". This is not a real intruder.";
+  } else dr.classList.remove("show");
 
   /* incident log */
-  const names = { intruder: "Intruder", breach: "Second breach", armed: "Armed", reset: "Reset by guard", boot: "Power on", drill: "Drill" };
+  const names = { intruder: "Intruder", breach: "Second breach", armed: "Armed", reset: "Reset by guard", boot: "Power on",
+                  drill: "Drill", radar: "Radar contact", radarclear: "Radar clear" };
   const list = msgs.filter((e) => names[e.type]).reverse().slice(0, 60);
   const key = list.map((e) => e.id).join() + "|" + new Date().toDateString();
   if (key === logKey) return;
@@ -727,15 +829,98 @@ function render() {
     '<tr><td colspan="4" class="empty">No incidents in the last 12 hours.</td></tr>';
   for (const e of list) {
     const tr = document.createElement("tr");
-    const zone = e.zone ? "Z" + e.zone + " " + ZONES[e.zone - 1].name : "";
+    const zone = e.zone && e.type !== "radar" ? "Z" + e.zone + " " + ZONES[e.zone - 1].name
+               : e.rad ? "Radar " + e.rad.a + "°, " + e.rad.d + " cm" : "";
     tr.innerHTML = '<td class="time mono"></td><td class="ev e-' + e.type + '"></td><td class="hide-sm"></td><td></td>';
     tr.children[0].textContent = stamp(e.time);
-    tr.children[1].textContent = names[e.type];
+    tr.children[1].textContent = e.type === "drill" ? (e.drillKind === "radar" ? "Radar drill" : "Breach drill") : names[e.type];
     tr.children[2].textContent = zone;
     tr.children[3].textContent = e.text;
     $("log").appendChild(tr);
   }
 }
+
+/* ---------- radar scope ---------- */
+const SCX = 200, SCY = 210, SCR = 190;
+function polar(a, r) { const t = a * Math.PI / 180; return [SCX + r * Math.cos(t), SCY - r * Math.sin(t)]; }
+function bearingWord(a) {
+  return a < 20 ? "far right" : a < 70 ? "front right" : a <= 110 ? "straight ahead" : a <= 160 ? "front left" : "far left";
+}
+let scopeRange = null;
+function drawScopeRings(range) {
+  if (range === scopeRange) return;
+  scopeRange = range;
+  let h = "";
+  for (const f of [1 / 3, 2 / 3]) h += '<path class="sc-ring" d="M' + (SCX - SCR * f) + " " + SCY + " A" + SCR * f + " " + SCR * f + " 0 0 1 " + (SCX + SCR * f) + " " + SCY + '"/>';
+  for (let a = 0; a <= 180; a += 30) {
+    const [x, y] = polar(a, SCR); h += '<line class="sc-spoke" x1="' + SCX + '" y1="' + SCY + '" x2="' + x + '" y2="' + y + '"/>';
+    const [lx, ly] = polar(a, SCR + 14);
+    h += '<text class="sc-lbl" x="' + lx + '" y="' + (ly + 4) + '" text-anchor="middle">' + a + '°</text>';
+  }
+  for (const f of [1 / 3, 2 / 3, 1]) {
+    h += '<text class="sc-lbl" x="' + (SCX + SCR * f - 4) + '" y="' + (SCY + 18) + '" text-anchor="middle">' + Math.round(range * f) + '</text>';
+  }
+  h += '<text class="sc-lbl" x="' + SCX + '" y="' + (SCY + 18) + '" text-anchor="middle">cm</text>';
+  $("scopeRings").innerHTML = h;
+}
+function renderRadar(r, now, linkState) {
+  drawScopeRings(r.range);
+  let b = "";
+  const sorted = [...r.blips].sort((x, y) => y.age - x.age);
+  for (const p of sorted) {
+    const [x, y] = polar(p.a, Math.min(p.d, r.range) / r.range * SCR);
+    const op = Math.max(0.15, 1 - p.age / BLIP_LIFE).toFixed(2);
+    b += '<circle class="blip" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (p.main ? 6 : 4) + '" opacity="' + op + '"/>';
+  }
+  if (r.active && r.contact) {
+    const [x, y] = polar(r.contact.a, Math.min(r.contact.d, r.range) / r.range * SCR);
+    b += '<circle class="blip now" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="8"/>' +
+         '<circle class="blip-ring" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="14"/>' +
+         '<text class="blip-lbl" x="' + x.toFixed(1) + '" y="' + (y - 20).toFixed(1) + '" text-anchor="middle">' + r.contact.d + ' cm</text>';
+  }
+  if (now < drillUntil && drillKind === "radar") {
+    const [x, y] = polar(drillRadar.a, Math.min(drillRadar.d, r.range) / r.range * SCR);
+    b += '<circle class="blip dz" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="8"/>' +
+         '<circle class="blip-ring dz" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="14"/>' +
+         '<text class="blip-lbl" x="' + x.toFixed(1) + '" y="' + (y - 20).toFixed(1) + '" text-anchor="middle">Drill</text>';
+  }
+  setHTML("scopeBlips", b);
+  $("radarRing").setAttribute("class", "r-ring" + (r.active || (now < drillUntil && drillKind === "radar") ? " on" : ""));
+
+  const st = $("rdrState");
+  if (!r.status) { st.textContent = "No data"; st.className = "warn"; }
+  else if (r.status === "off") { st.textContent = "Not fitted"; st.className = ""; }
+  else if (linkState === "late" || linkState === "lost") { st.textContent = "No recent report"; st.className = "warn"; }
+  else if (r.status === "learn" && now - r.statusAt * 1000 < 30e3) { st.textContent = "Learning the area"; st.className = "warn"; }
+  else { st.textContent = "On watch"; st.className = "ok"; }
+  const c = $("rdrContact");
+  if (r.active && r.contact) { c.textContent = r.contact.d + " cm at " + r.contact.a + "°, " + bearingWord(r.contact.a); c.className = "bad"; }
+  else if (r.active) { c.textContent = "Object detected"; c.className = "bad"; }
+  else { c.textContent = "None"; c.className = "ok"; }
+  $("rdrLast").textContent = r.lastContact ? stamp(r.lastContact) + " (" + dur(now - r.lastContact * 1000) + " ago)" : "None";
+  $("rdrToday").textContent = r.today;
+  $("rdrRange").textContent = r.range + " cm";
+}
+
+/* sweep animation (60 fps, independent of the 1 s render) */
+(function sweep() {
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function frame(t) {
+    const ph = (t / 1000 % SWEEP_PERIOD) / SWEEP_PERIOD;           // 0..1
+    const a = ph < 0.5 ? ph * 2 * 180 : (1 - ph) * 2 * 180;         // 0 -> 180 -> 0
+    const dir = ph < 0.5 ? 1 : -1;
+    const [x, y] = polar(a, SCR);
+    const ln = $("sweepLine");
+    ln.setAttribute("x2", x.toFixed(1)); ln.setAttribute("y2", y.toFixed(1));
+    const a2 = Math.max(0, Math.min(180, a - dir * 24));
+    const [x2, y2] = polar(a2, SCR);
+    const sweepFlag = dir > 0 ? 0 : 1;
+    $("sweepTrail").setAttribute("d", "M" + SCX + " " + SCY + " L" + x2.toFixed(1) + " " + y2.toFixed(1) +
+      " A" + SCR + " " + SCR + " 0 0 " + sweepFlag + " " + x.toFixed(1) + " " + y.toFixed(1) + " Z");
+    if (!reduce) requestAnimationFrame(frame);
+  }
+  if (reduce) frame(1525); else requestAnimationFrame(frame);
+})();
 
 /* ---------- siren + notifications ---------- */
 function startSiren() {
@@ -764,9 +949,33 @@ function raiseAlarm(ev) {
   if (alertsOn) { startSiren(); notify("BREACH at " + baseName, "Zone " + ev.zone + (z ? " " + z.name : "") + " broken at " + hms(ev.time)); }
   if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 400]);
 }
+function chirp() {
+  if (!audio) return;
+  const t0 = audio.currentTime;
+  for (let i = 0; i < 3; i++) {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = "square"; o.frequency.value = 1800;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.setValueAtTime(0.08, t0 + i * 0.22); g.gain.setValueAtTime(0.0001, t0 + i * 0.22 + 0.12);
+    o.connect(g); g.connect(audio.destination); o.start(t0); o.stop(t0 + 0.8);
+  }
+}
+function radarAlert(ev) {
+  if (alertsOn) {
+    chirp();
+    notify("Radar contact at " + baseName, ev.rad ? "Object " + ev.rad.d + " cm away at " + ev.rad.a + "° (" + bearingWord(ev.rad.a) + ")" : "Object detected near the base");
+  }
+  if (navigator.vibrate) navigator.vibrate([150, 100, 150]);
+}
 function startDrill(ev) {
-  drillUntil = Date.now() + 20000; drillZone = ev.zone || 1;
-  if (alertsOn) { startSiren(); notify("Drill at " + baseName, "Simulated breach at zone " + drillZone); setTimeout(stopSiren, 8000); }
+  drillUntil = Date.now() + 20000;
+  drillKind = ev.drillKind;
+  if (drillKind === "radar") {
+    drillRadar = ev.rad || { a: 90, d: 25 };
+    if (alertsOn) { chirp(); notify("Radar drill at " + baseName, "Simulated contact " + drillRadar.d + " cm away at " + drillRadar.a + "°"); }
+  } else {
+    drillZone = ev.zone || 1;
+    if (alertsOn) { startSiren(); notify("Drill at " + baseName, "Simulated breach at zone " + drillZone); setTimeout(stopSiren, 8000); }
+  }
 }
 
 $("alertsBtn").addEventListener("click", async () => {
@@ -794,6 +1003,21 @@ $("drillBtn").addEventListener("click", async () => {
     });
   } catch (e) {}
   setTimeout(() => ($("drillBtn").disabled = false), 5000);
+});
+$("radarDrillBtn").addEventListener("click", async () => {
+  const a = 15 + 3 * Math.floor(Math.random() * 51), d = 12 + Math.floor(Math.random() * 30);
+  $("radarDrillBtn").disabled = true;
+  try {
+    await fetch(SERVER, {
+      method: "POST",
+      body: JSON.stringify({
+        topic, title: baseName + " drill", priority: 3,
+        message: "Drill: simulated radar contact " + d + " cm away at " + a + " degrees. Not a real object.",
+        tags: ["test_tube", "test", "radar", "rad-" + a + "-" + d]
+      })
+    });
+  } catch (e) {}
+  setTimeout(() => ($("radarDrillBtn").disabled = false), 5000);
 });
 
 /* ---------- connection ---------- */

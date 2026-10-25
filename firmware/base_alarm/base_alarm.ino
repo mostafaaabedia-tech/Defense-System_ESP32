@@ -15,12 +15,13 @@
      - 2 short chirps, contact shown on the map screen + website
      - the siren is NOT latched for radar (it is an early warning)
 
-   SCREENS
-     Screen 1 (status):  your first 1.5" OLED   (I2C pins 21/22)
-     Screen 2 (map):     1.5" SH1107 OLED       (I2C pins 16/17)
-                         tactical map of the base + radar scope
-     Only one screen?  Set MAP_SCREEN 0 and screen 1 switches
-     between the status page and the map page by itself.
+   SCREENS (1.5" 128x128 OLED, SH1107 by default)
+     The code FINDS your screens by itself at power on:
+       - one screen  (on pins 21/22 OR 16/17): it switches between
+         the status page and the map + radar page
+       - two screens (one on 21/22, one on 16/17):
+         21/22 = status page, 16/17 = map + radar page
+     Open Serial Monitor (115200) to see which screens were found.
 
    Libraries (Arduino Library Manager):  U8g2  (by olikraus)
    Board: "ESP32 Dev Module"   (esp32 core 2.x or 3.x both work)
@@ -42,19 +43,19 @@ const char* WIFI_PASS  = "YOUR_WIFI_PASSWORD";
 const char* NTFY_TOPIC = "base-alarm-CHANGE-ME-4821";
 const char* BASE_NAME  = "BASE ALPHA";
 
-// Screen 1 (status screen):
-// 1 = SSD1327 I2C (4-pin 1.5" grayscale, Waveshare style)
-// 2 = SSD1327 I2C (generic "Midas" variant — try if 1 looks shifted)
-// 3 = SH1107  I2C (4-pin 1.5" 128x128 mono)
-// 4 = SSD1327 SPI (7-pin module)
-#define DISPLAY_TYPE 1
-
-// Screen 2 (map + radar screen):
-// 1 = you have a second 1.5" SH1107 screen on pins 16/17
-// 0 = only one screen: it switches between status and map pages
-#define MAP_SCREEN 1
-// If screen 2 looks shifted or garbled try 2 (Seeed style) or 3 (Pimoroni style)
-#define MAP_SCREEN_VARIANT 1
+// ---- SCREEN ----
+// Which chip is your screen? (written on the shop page or the back of the board)
+//   1 = SH1107  I2C, 4 pins (GND VCC SCL SDA)  <- 1.5" mono 128x128
+//   2 = SSD1327 I2C, 4 pins (1.5" grayscale)
+//   3 = SH1107  SPI, 7 pins (GND VCC DIN CLK CS DC RST)
+//   4 = SSD1327 SPI, 7 pins
+// A WRONG number here gives a screen full of random dots (looks like a QR code).
+#define SCREEN_TYPE 1
+// SH1107 only: if the picture is shifted, cut off or upside down, try 2, then 3
+#define SH1107_VARIANT 1
+// Screen I2C speed. If you see a few random dots or a flickering picture
+// (long wires, breadboard), change to 100000
+#define SCREEN_I2C_HZ 400000
 
 // Buzzer: 0 = ACTIVE buzzer (beeps by itself on 3.3V), 1 = PASSIVE buzzer (needs a tone)
 #define BUZZER_PASSIVE 0
@@ -76,11 +77,12 @@ const int LED_PIN     = 2;    // on-board LED, blinks in alarm
 const int SERVO_PIN   = 13;   // servo signal (orange/yellow wire)
 const int TRIG_PIN    = 26;   // HC-SR04 Trig
 const int ECHO_PIN    = 14;   // HC-SR04 Echo  (through a 1k / 2k voltage divider! Echo is 5 V)
-const int MAP_SDA     = 16;   // screen 2 SDA
-const int MAP_SCL     = 17;   // screen 2 SCL
+const int SCR1_SDA    = 21;   // screen on the first I2C pins
+const int SCR1_SCL    = 22;
+const int SCR2_SDA    = 16;   // second screen (map + radar), always SH1107
+const int SCR2_SCL    = 17;
 
-// Screen 1 I2C: SDA 21, SCL 22 (ESP32 default)
-// Screen 1 SPI (type 4): MOSI 23, SCK 18, CS 5, DC 4, RST 15
+// SPI screen (type 3 or 4): DIN/MOSI 23, CLK 18, CS 5, DC 4, RST 15
 
 // ---------- Tuning ----------
 const float TRIP_RATIO     = 0.55;  // beam is "broken" if light drops below 55% of calibrated level
@@ -100,25 +102,41 @@ const unsigned long RADAR_UPDATE_MS   = 3UL * 60UL * 1000UL; // "still there" up
 const int           RADAR_DAILY_MAX   = 60;    // radar messages per 24 h (free ntfy.sh has a daily limit)
 
 // ---------- Screens ----------
-#if DISPLAY_TYPE == 1
-U8G2_SSD1327_WS_128X128_F_HW_I2C mainScr(U8G2_R0, U8X8_PIN_NONE);
-#elif DISPLAY_TYPE == 2
-U8G2_SSD1327_MIDAS_128X128_F_HW_I2C mainScr(U8G2_R0, U8X8_PIN_NONE);
-#elif DISPLAY_TYPE == 3
-U8G2_SH1107_128X128_F_HW_I2C mainScr(U8G2_R0, U8X8_PIN_NONE);
+#define SCREEN1_IS_I2C (SCREEN_TYPE == 1 || SCREEN_TYPE == 2)
+#if SCREEN_TYPE == 1
+  #if SH1107_VARIANT == 2
+  U8G2_SH1107_SEEED_128X128_F_HW_I2C scr1(U8G2_R0, U8X8_PIN_NONE);
+  #elif SH1107_VARIANT == 3
+  U8G2_SH1107_PIMORONI_128X128_F_HW_I2C scr1(U8G2_R0, U8X8_PIN_NONE);
+  #else
+  U8G2_SH1107_128X128_F_HW_I2C scr1(U8G2_R0, U8X8_PIN_NONE);
+  #endif
+#elif SCREEN_TYPE == 2
+U8G2_SSD1327_WS_128X128_F_HW_I2C scr1(U8G2_R0, U8X8_PIN_NONE);
+#elif SCREEN_TYPE == 3
+  #if SH1107_VARIANT == 2
+  U8G2_SH1107_SEEED_128X128_F_4W_HW_SPI scr1(U8G2_R0, /*cs=*/5, /*dc=*/4, /*reset=*/15);
+  #elif SH1107_VARIANT == 3
+  U8G2_SH1107_PIMORONI_128X128_F_4W_HW_SPI scr1(U8G2_R0, /*cs=*/5, /*dc=*/4, /*reset=*/15);
+  #else
+  U8G2_SH1107_128X128_F_4W_HW_SPI scr1(U8G2_R0, /*cs=*/5, /*dc=*/4, /*reset=*/15);
+  #endif
 #else
-U8G2_SSD1327_WS_128X128_F_4W_HW_SPI mainScr(U8G2_R0, /*cs=*/5, /*dc=*/4, /*reset=*/15);
+U8G2_SSD1327_WS_128X128_F_4W_HW_SPI scr1(U8G2_R0, /*cs=*/5, /*dc=*/4, /*reset=*/15);
 #endif
 
-#if MAP_SCREEN
-  #if MAP_SCREEN_VARIANT == 2
-  U8G2_SH1107_SEEED_128X128_F_2ND_HW_I2C mapScr(U8G2_R0, U8X8_PIN_NONE);
-  #elif MAP_SCREEN_VARIANT == 3
-  U8G2_SH1107_PIMORONI_128X128_F_2ND_HW_I2C mapScr(U8G2_R0, U8X8_PIN_NONE);
-  #else
-  U8G2_SH1107_128X128_F_2ND_HW_I2C mapScr(U8G2_R0, U8X8_PIN_NONE);
-  #endif
+// second screen on pins 16/17 (always SH1107)
+#if SH1107_VARIANT == 2
+U8G2_SH1107_SEEED_128X128_F_2ND_HW_I2C scr2(U8G2_R0, U8X8_PIN_NONE);
+#elif SH1107_VARIANT == 3
+U8G2_SH1107_PIMORONI_128X128_F_2ND_HW_I2C scr2(U8G2_R0, U8X8_PIN_NONE);
+#else
+U8G2_SH1107_128X128_F_2ND_HW_I2C scr2(U8G2_R0, U8X8_PIN_NONE);
 #endif
+
+U8G2* statusScr = nullptr;   // set at power on, depending on which screens answer
+U8G2* mapScr    = nullptr;
+U8G2* onlyScr   = nullptr;   // used when there is just one screen
 
 // ---------- State ----------
 enum State { CALIBRATING, ARMING, ARMED, ALARM };
@@ -672,17 +690,85 @@ void drawMap(U8G2 &d) {
 // Screens are drawn on the other CPU core, so slow screen updates never delay the lasers or radar.
 void displayTask(void*) {
   for (;;) {
-#if MAP_SCREEN
-    drawStatus(mainScr);
-    drawMap(mapScr);
-#else
-    unsigned long now = millis();
-    bool showMap = state == ALARM ? (now / 2500) % 2 : (now / 5000) % 2;
-    if (contactActive && state != ALARM) showMap = true;   // radar contact: show the scope
-    if (showMap) drawMap(mainScr); else drawStatus(mainScr);
-#endif
+    if (statusScr && mapScr) {
+      drawStatus(*statusScr);
+      drawMap(*mapScr);
+    } else if (onlyScr) {
+      unsigned long now = millis();
+      bool showMap = state == ALARM ? (now / 2500) % 2 : (now / 5000) % 2;
+      if (contactActive && state != ALARM) showMap = true;   // radar contact: show the scope
+      if (showMap) drawMap(*onlyScr); else drawStatus(*onlyScr);
+    } else {
+      vTaskDelay(pdMS_TO_TICKS(1000));                       // no screen found
+    }
     vTaskDelay(pdMS_TO_TICKS(20));
   }
+}
+
+// ---------- Finding the screens ----------
+uint8_t findScreen(TwoWire& bus) {          // OLEDs answer on I2C address 0x3C or 0x3D
+  const uint8_t addrs[2] = {0x3C, 0x3D};
+  for (uint8_t a : addrs) {
+    bus.beginTransmission(a);
+    if (bus.endTransmission() == 0) return a;
+  }
+  return 0;
+}
+
+void splash(U8G2& d, const char* role) {
+  d.clearBuffer();
+  d.drawFrame(0, 0, 128, 128);
+  d.setFont(u8g2_font_helvB12_tf);
+  drawCentered(d, BASE_NAME, 40);
+  d.setFont(u8g2_font_6x10_tf);
+  drawCentered(d, "SCREEN OK", 70);
+  drawCentered(d, role, 88);
+  d.sendBuffer();
+}
+
+void setupScreens() {
+  Wire.begin(SCR1_SDA, SCR1_SCL);
+  Wire1.begin(SCR2_SDA, SCR2_SCL);
+#if SCREEN1_IS_I2C
+  uint8_t a1 = findScreen(Wire);
+  bool have1 = a1 != 0;
+#else
+  uint8_t a1 = 0;
+  bool have1 = true;                          // SPI screens can't be detected, assume it's there
+#endif
+  uint8_t a2 = findScreen(Wire1);
+
+  if (have1) {
+#if SCREEN1_IS_I2C
+    scr1.setI2CAddress(a1 * 2);
+    scr1.setBusClock(SCREEN_I2C_HZ);
+#endif
+    scr1.begin();
+    scr1.setContrast(255);
+  }
+  if (a2) {
+    scr2.setI2CAddress(a2 * 2);
+    scr2.setBusClock(SCREEN_I2C_HZ);
+    scr2.begin();
+    scr2.setContrast(255);
+  }
+
+  if (have1 && a2)  { statusScr = &scr1; mapScr = &scr2; splash(scr1, "STATUS PAGE"); splash(scr2, "MAP + RADAR PAGE"); }
+  else if (have1)   { onlyScr = &scr1; splash(scr1, "STATUS + MAP PAGES"); }
+  else if (a2)      { onlyScr = &scr2; splash(scr2, "STATUS + MAP PAGES"); }
+
+  Serial.println("---- Screens ----");
+#if SCREEN1_IS_I2C
+  if (a1) Serial.printf("Pins 21/22: screen found at 0x%02X\n", a1);
+  else    Serial.println("Pins 21/22: no screen");
+#else
+  Serial.println("SPI screen: CS 5, DC 4, RST 15, DIN 23, CLK 18");
+#endif
+  if (a2) Serial.printf("Pins 16/17: screen found at 0x%02X\n", a2);
+  else    Serial.println("Pins 16/17: no screen");
+  if (!have1 && !a2) Serial.println("NO SCREEN FOUND: check VCC->3.3V, GND, SDA, SCL (SDA and SCL swapped is very common)");
+  Serial.printf("Screen type setting: %d (1 = SH1107 I2C)\n", SCREEN_TYPE);
+  delay(1200);                                // show the "SCREEN OK" page for a moment
 }
 
 // ---------- State changes ----------
@@ -741,17 +827,11 @@ void setup() {
 #endif
   radarStartLearning();
 
-  mainScr.begin();
-  mainScr.setContrast(255);
-#if MAP_SCREEN
-  Wire1.setPins(MAP_SDA, MAP_SCL);
-  mapScr.begin();
-  mapScr.setContrast(255);
-#endif
+  setupScreens();
   state = CALIBRATING;
 
   noteQueue = xQueueCreate(8, sizeof(Note));
-  xTaskCreatePinnedToCore(notifyTask, "notify", 8192, nullptr, 1, nullptr, 0);
+  xTaskCreatePinnedToCore(notifyTask, "notify", 12288, nullptr, 1, nullptr, 0);
   xTaskCreatePinnedToCore(displayTask, "screens", 6144, nullptr, 1, nullptr, 0);
 
   WiFi.mode(WIFI_STA);

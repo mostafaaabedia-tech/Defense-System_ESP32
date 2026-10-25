@@ -5,7 +5,7 @@ servo-mounted ultrasonic radar sweeps the area in front of the base.
 
 - **Laser breach:** the siren starts and **stays on** (latched) until a guard presses the **reset switch**
 - **Radar contact:** two short chirps, and the object is shown on the radar scope (an early warning, no latched siren)
-- **Two screens:** a status screen, and a 1.5" SH1107 **map screen** with a tactical map of the base and a live radar scope
+- **1.5" SH1107 OLED:** a status page and a **map page** with a tactical map of the base and a live radar scope (one screen switches pages; with two screens each gets its own page)
 - **Website** (GitHub Pages) and your phone get every alert within a second or two
 
 ```
@@ -26,8 +26,7 @@ oled-screens.png                     → what the two OLED screens look like
 | Laser module (KY-008 or 2-wire 5 V laser) | 4 |
 | Buzzer (active or passive) | 1 |
 | Push button / switch (reset) | 1 |
-| 1.5" OLED 128×128, status screen (SSD1327 or SH1107) | 1 |
-| **1.5" OLED 128×128 SH1107**, map + radar screen | 1 |
+| **1.5" OLED 128×128 SH1107** | 1 (a second one is optional) |
 | **Servo SG90** (or MG90S) | 1 |
 | **HC-SR04** ultrasonic sensor | 1 |
 | Resistors **1 kΩ + 2 kΩ** (for the HC-SR04 Echo pin) | 1 each |
@@ -43,8 +42,8 @@ oled-screens.png                     → what the two OLED screens look like
 | 32 / 33 / 34 / 35 | LDR zone 1 / 2 / 3 / 4 |
 | 25 | Buzzer + |
 | 27 | Reset switch (other leg to GND) |
-| 21 / 22 | Status screen SDA / SCL |
-| **16 / 17** | **Map screen (SH1107) SDA / SCL** |
+| 21 / 22 | OLED SDA / SCL |
+| 16 / 17 | Second OLED SDA / SCL (optional) |
 | **13** | **Servo signal** |
 | **26** | **HC-SR04 Trig** |
 | **14** | **HC-SR04 Echo (through the divider!)** |
@@ -68,33 +67,34 @@ oled-screens.png                     → what the two OLED screens look like
 
 The lasers stay on all the time: KY-008 **S** → **VIN / 5V**, **–** → **GND**, middle pin empty.
 
-### Status screen, buzzer, reset switch
+### Buzzer, reset switch
 
 | Part | Pin | ESP32 |
 |---|---|---|
-| Status OLED (I2C) | VCC / GND / SDA / SCL | 3.3V / GND / **21** / **22** |
 | Buzzer | + / – | **25** / GND |
 | Reset switch | legs | **27** / GND (internal pull-up, no resistor) |
 
-If the status screen has **7 pins** (SPI): DIN→23, CLK→18, CS→5, DC→4, RST→15, then set `DISPLAY_TYPE 4`.
+### OLED screen (1.5" SH1107, 4 pins)
 
-### Map screen (1.5" SH1107)
-
-| SH1107 pin | ESP32 |
+| OLED pin | ESP32 |
 |---|---|
 | VCC | 3.3V |
 | GND | GND |
-| SDA | GPIO **16** |
-| SCL | GPIO **17** |
+| SDA | GPIO **21** |
+| SCL | GPIO **22** |
 
-It is on its own I2C bus (pins 16/17), so it never clashes with the status screen even if
-both screens use the same I2C address.
+The code **finds the screen by itself** when it powers on:
 
-> GPIO 16/17 are free on normal ESP32 **WROOM** boards. On a WROVER board they are used by the extra RAM,
-> so change `MAP_SDA` / `MAP_SCL` to two other free pins (for example 18 and 19).
+- **One screen:** it switches between the status page and the map + radar page every 5 s, and jumps
+  to the radar page when something is detected. It works on pins 21/22 or on 16/17.
+- **Two screens:** put the second SH1107 on SDA → **16**, SCL → **17**. Then 21/22 shows the status page and
+  16/17 shows the map + radar page.
 
-**Only have one screen?** Set `#define MAP_SCREEN 0`. The status screen then switches between the
-status page and the map page every 5 seconds, and jumps to the radar scope when something is detected.
+At power on each screen shows **"SCREEN OK"** and which page it will show. Serial Monitor (115200) prints
+which screens were found.
+
+> If your screen has **7 pins** (SPI): DIN→23, CLK→18, CS→5, DC→4, RST→15, and set `SCREEN_TYPE 3` (SH1107) or `4` (SSD1327).
+> GPIO 16/17 are free on normal ESP32 **WROOM** boards; on a WROVER board don't use them.
 
 ### Radar: servo + HC-SR04
 
@@ -130,16 +130,17 @@ power the servo from a separate 5 V supply (with GNDs connected together), or ad
    const char* WIFI_SSID  = "YOUR_WIFI_NAME";
    const char* WIFI_PASS  = "YOUR_WIFI_PASSWORD";
    const char* NTFY_TOPIC = "base-alarm-CHANGE-ME-4821";   // make up your own secret name
-   #define DISPLAY_TYPE 1        // status screen type, see below
-   #define MAP_SCREEN 1          // 1 = second SH1107 screen, 0 = only one screen
+   #define SCREEN_TYPE 1         // 1 = SH1107 I2C (see below)
    #define BUZZER_PASSIVE 0      // 0 = active buzzer, 1 = passive buzzer
    #define RADAR_ENABLED 1       // 0 if you haven't built the radar yet
    const int RADAR_RANGE_CM = 50;   // how far the radar looks
    ```
 4. Board: **ESP32 Dev Module** → Upload. Open Serial Monitor at 115200 to see light readings and radar contacts.
 
-**Which DISPLAY_TYPE?** `1` SSD1327 I2C · `2` SSD1327 I2C (try if picture is shifted) · `3` SH1107 I2C · `4` SSD1327 SPI (7 pins).
-If the map screen looks shifted or garbled, change `MAP_SCREEN_VARIANT` to 2, then 3.
+**Which SCREEN_TYPE?** `1` SH1107 I2C (4 pins, default) · `2` SSD1327 I2C · `3` SH1107 SPI (7 pins) · `4` SSD1327 SPI.
+A wrong number gives a screen full of random dots that looks like a QR code.
+If the picture is shifted, cut off or mirrored, change `SH1107_VARIANT` to 2, then 3.
+If you see a few random dots or flicker (long wires), change `SCREEN_I2C_HZ` to `100000`.
 
 **Which buzzer?** If it beeps when you connect it straight to 3.3V it's *active* (`0`). If it only clicks, it's *passive* (`1`).
 
@@ -166,15 +167,15 @@ calibration it **learns** how far away things normally are in every direction (t
 After that, it only reports something that is **at least 6 cm closer than normal** and **inside the radar range**, and only if it
 shows up in two neighbouring directions, which filters out single bad echoes.
 
-So: after you hold reset, **step back out of the radar's view** until the map screen says `RDR CLEAR` instead of `RDR LEARN`.
+So: after you hold reset, **step back out of the radar's view** until the map page says `RDR CLEAR` instead of `RDR LEARN`.
 If you move a building on the model, hold reset 3 s so the radar learns the new layout.
 
 ### The two screens
 
-**Status screen:** big state word (ARMED / INTRUDER / ARMING), a live light bar for each laser (use it to aim them),
+**Status page:** big state word (ARMED / INTRUDER / ARMING), a live light bar for each laser (use it to aim them),
 and a footer showing the radar status.
 
-**Map screen (SH1107):**
+**Map + radar page:**
 - Top left: a tactical map of the base: fence, 4 watchtowers, the 4 laser walls, HQ, helipad, barracks, motor pool,
   and the radar dish with a line showing where it is pointing right now.
   Beams are solid when on watch, thick and blinking when broken, dotted when bypassed, dashed while arming.
@@ -234,7 +235,9 @@ and a status report every 15 minutes.
 | Alarm goes off by itself | Room too bright / laser barely hitting. Add tubes on LDRs, re-aim, hold reset 3 s. Or lower `TRIP_RATIO` (e.g. 0.45) |
 | Breaking the beam does nothing | Check the zone isn't **OFF**. Open Serial Monitor: light value should drop a lot when you block it |
 | Zone always OFF | Laser not hitting the LDR, or the resistor/LDR wired the wrong way round (swap them) |
-| Map screen black | Check SDA→16, SCL→17, VCC on 3.3V. Try `MAP_SCREEN_VARIANT` 2 or 3 |
+| Screen full of random dots ("QR code") | `SCREEN_TYPE` doesn't match your chip. SH1107 = `1` |
+| Screen stays black | Serial Monitor says "no screen": check VCC→3.3V, GND, and that SDA/SCL aren't swapped |
+| Picture shifted / cut off | Try `SH1107_VARIANT` 2, then 3 |
 | Radar never sees anything | Check the Echo divider and Trig/Echo aren't swapped. Serial Monitor should print "Radar contact" when you put your hand in front |
 | Radar contacts all the time | You were in view while it learned. Hold reset 3 s and step away. Or raise `RADAR_MARGIN_CM` to 10 |
 | Servo jitters / ESP32 restarts | Servo needs more current: separate 5 V supply or a 470 µF capacitor |

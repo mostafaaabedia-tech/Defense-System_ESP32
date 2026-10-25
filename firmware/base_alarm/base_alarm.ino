@@ -51,7 +51,10 @@ const char* BASE_NAME  = "BASE ALPHA";
 //   4 = SSD1327 SPI, 7 pins
 // A WRONG number here gives a screen full of random dots (looks like a QR code).
 #define SCREEN_TYPE 1
-// SH1107 only: if the picture is shifted, cut off or upside down, try 2, then 3
+// SH1107 only: if the picture is shifted sideways or wraps around the edge, try 2, then 3
+//   1 = GME128128-01-IIC and most 1.5" SH1107 boards (no offset)
+//   2 = boards that need a 96-column offset
+//   3 = Seeed Grove 1.12" style
 #define SH1107_VARIANT 1
 // Screen I2C speed. If you see a few random dots or a flickering picture
 // (long wires, breadboard), change to 100000
@@ -105,21 +108,21 @@ const int           RADAR_DAILY_MAX   = 60;    // radar messages per 24 h (free 
 #define SCREEN1_IS_I2C (SCREEN_TYPE == 1 || SCREEN_TYPE == 2)
 #if SCREEN_TYPE == 1
   #if SH1107_VARIANT == 2
-  U8G2_SH1107_SEEED_128X128_F_HW_I2C scr1(U8G2_R0, U8X8_PIN_NONE);
-  #elif SH1107_VARIANT == 3
-  U8G2_SH1107_PIMORONI_128X128_F_HW_I2C scr1(U8G2_R0, U8X8_PIN_NONE);
-  #else
   U8G2_SH1107_128X128_F_HW_I2C scr1(U8G2_R0, U8X8_PIN_NONE);
+  #elif SH1107_VARIANT == 3
+  U8G2_SH1107_SEEED_128X128_F_HW_I2C scr1(U8G2_R0, U8X8_PIN_NONE);
+  #else
+  U8G2_SH1107_PIMORONI_128X128_F_HW_I2C scr1(U8G2_R0, U8X8_PIN_NONE);
   #endif
 #elif SCREEN_TYPE == 2
 U8G2_SSD1327_WS_128X128_F_HW_I2C scr1(U8G2_R0, U8X8_PIN_NONE);
 #elif SCREEN_TYPE == 3
   #if SH1107_VARIANT == 2
-  U8G2_SH1107_SEEED_128X128_F_4W_HW_SPI scr1(U8G2_R0, /*cs=*/5, /*dc=*/4, /*reset=*/15);
-  #elif SH1107_VARIANT == 3
-  U8G2_SH1107_PIMORONI_128X128_F_4W_HW_SPI scr1(U8G2_R0, /*cs=*/5, /*dc=*/4, /*reset=*/15);
-  #else
   U8G2_SH1107_128X128_F_4W_HW_SPI scr1(U8G2_R0, /*cs=*/5, /*dc=*/4, /*reset=*/15);
+  #elif SH1107_VARIANT == 3
+  U8G2_SH1107_SEEED_128X128_F_4W_HW_SPI scr1(U8G2_R0, /*cs=*/5, /*dc=*/4, /*reset=*/15);
+  #else
+  U8G2_SH1107_PIMORONI_128X128_F_4W_HW_SPI scr1(U8G2_R0, /*cs=*/5, /*dc=*/4, /*reset=*/15);
   #endif
 #else
 U8G2_SSD1327_WS_128X128_F_4W_HW_SPI scr1(U8G2_R0, /*cs=*/5, /*dc=*/4, /*reset=*/15);
@@ -127,11 +130,11 @@ U8G2_SSD1327_WS_128X128_F_4W_HW_SPI scr1(U8G2_R0, /*cs=*/5, /*dc=*/4, /*reset=*/
 
 // second screen on pins 16/17 (always SH1107)
 #if SH1107_VARIANT == 2
-U8G2_SH1107_SEEED_128X128_F_2ND_HW_I2C scr2(U8G2_R0, U8X8_PIN_NONE);
-#elif SH1107_VARIANT == 3
-U8G2_SH1107_PIMORONI_128X128_F_2ND_HW_I2C scr2(U8G2_R0, U8X8_PIN_NONE);
-#else
 U8G2_SH1107_128X128_F_2ND_HW_I2C scr2(U8G2_R0, U8X8_PIN_NONE);
+#elif SH1107_VARIANT == 3
+U8G2_SH1107_SEEED_128X128_F_2ND_HW_I2C scr2(U8G2_R0, U8X8_PIN_NONE);
+#else
+U8G2_SH1107_PIMORONI_128X128_F_2ND_HW_I2C scr2(U8G2_R0, U8X8_PIN_NONE);
 #endif
 
 U8G2* statusScr = nullptr;   // set at power on, depending on which screens answer

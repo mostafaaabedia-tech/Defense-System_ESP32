@@ -139,7 +139,8 @@ power the servo from a separate 5 V supply (with GNDs connected together), or ad
 
 **Which SCREEN_TYPE?** `1` SH1107 I2C (4 pins, default) · `2` SSD1327 I2C · `3` SH1107 SPI (7 pins) · `4` SSD1327 SPI.
 A wrong number gives a screen full of random dots that looks like a QR code.
-If the picture is shifted, cut off or mirrored, change `SH1107_VARIANT` to 2, then 3.
+`SH1107_VARIANT 1` fits the **GME128128-01-IIC** board and most 1.5" SH1107 boards. If the picture is shifted sideways
+or wraps around the edge (for example the zones read Z2 Z3 Z4 Z1), change it to 2, then 3.
 If you see a few random dots or flicker (long wires), change `SCREEN_I2C_HZ` to `100000`.
 
 **Which buzzer?** If it beeps when you connect it straight to 3.3V it's *active* (`0`). If it only clicks, it's *passive* (`1`).
@@ -237,7 +238,7 @@ and a status report every 15 minutes.
 | Zone always OFF | Laser not hitting the LDR, or the resistor/LDR wired the wrong way round (swap them) |
 | Screen full of random dots ("QR code") | `SCREEN_TYPE` doesn't match your chip. SH1107 = `1` |
 | Screen stays black | Serial Monitor says "no screen": check VCC→3.3V, GND, and that SDA/SCL aren't swapped |
-| Picture shifted / cut off | Try `SH1107_VARIANT` 2, then 3 |
+| Picture shifted sideways / wraps around | Try `SH1107_VARIANT` 2, then 3 |
 | Radar never sees anything | Check the Echo divider and Trig/Echo aren't swapped. Serial Monitor should print "Radar contact" when you put your hand in front |
 | Radar contacts all the time | You were in view while it learned. Hold reset 3 s and step away. Or raise `RADAR_MARGIN_CM` to 10 |
 | Servo jitters / ESP32 restarts | Servo needs more current: separate 5 V supply or a 470 µF capacitor |

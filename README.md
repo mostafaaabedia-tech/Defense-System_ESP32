@@ -30,6 +30,7 @@ oled-screens.png                     → what the two OLED screens look like
 | **Servo SG90** (or MG90S) | 1 |
 | **HC-SR04** ultrasonic sensor | 1 |
 | Resistors **1 kΩ + 2 kΩ** (for the HC-SR04 Echo pin) | 1 each |
+| **1-channel relay module** (5 V) + a light | 1 |
 
 ---
 
@@ -46,6 +47,7 @@ oled-screens.png                     → what the two OLED screens look like
 | 16 / 17 | Second OLED SDA / SCL (optional) |
 | **13** | **Servo signal** |
 | **26** | **HC-SR04 Trig** |
+| **19** | **Relay module IN (floodlight)** |
 | **14** | **HC-SR04 Echo (through the divider!)** |
 | 3.3V | LDRs, both screens' VCC |
 | VIN / 5V | Lasers, servo, HC-SR04 VCC |
@@ -95,6 +97,25 @@ which screens were found.
 
 > If your screen has **7 pins** (SPI): DIN→23, CLK→18, CS→5, DC→4, RST→15, and set `SCREEN_TYPE 3` (SH1107) or `4` (SSD1327).
 > GPIO 16/17 are free on normal ESP32 **WROOM** boards; on a WROVER board don't use them.
+
+### Floodlight relay
+
+When an intruder breaks a laser, the relay switches the light **on**, and it stays on until the guard presses reset.
+
+| Relay module pin | ESP32 |
+|---|---|
+| VCC | VIN / 5V |
+| GND | GND |
+| IN | GPIO **19** |
+
+The light goes on the relay's screw terminals: **COM** and **NO** (normally open), in series with the light's power.
+
+- Most blue relay modules switch on when IN is LOW, which is the default (`RELAY_ACTIVE_LOW 1`).
+  If your light is on when it should be off, set `RELAY_ACTIVE_LOW 0`.
+- Set `LIGHT_ON_RADAR 1` if you also want the light on during a radar contact.
+- **Safety:** for the model, use a 5 V or 12 V LED lamp with its own adapter.
+  Only switch a 220 V mains lamp if an adult who knows electrics wires it, with the relay inside a closed box.
+  Mains can kill.
 
 ### Radar: servo + HC-SR04
 
@@ -152,12 +173,12 @@ If you see a few random dots or flicker (long wires), change `SCREEN_I2C_HZ` to 
 | What happens | What the base does |
 |---|---|
 | Power on | Waits 5 s, measures each beam's brightness, radar learns the area, then **ARMED** |
-| Beam broken for 40 ms | **ALARM**: siren, flashing screens, phone + website alert |
+| Beam broken for 40 ms | **ALARM**: siren, floodlight on, flashing screens, phone + website alert |
 | Another beam broken during the alarm | "Second breach" alert for that zone too |
 | New object in front of the radar | **RADAR CONTACT**: 2 chirps, contact on both screens + website (max 1 alert a minute) |
 | Object leaves | "Radar clear" message |
 | Every 15 minutes | Quiet status report so the website knows the base is online |
-| Press reset | Siren off, 5 s countdown, re-armed (keeps the old calibration) |
+| Press reset | Siren and floodlight off, 5 s countdown, re-armed (keeps the old calibration) |
 | **Hold** reset 3 s | Two beeps, re-measures the lasers **and re-learns the radar area** |
 | A laser isn't hitting its LDR at calibration | That zone shows **OFF** and is skipped |
 

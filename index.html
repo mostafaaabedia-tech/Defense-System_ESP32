@@ -144,6 +144,8 @@
   .bmark text { fill: var(--laser); font: 900 15px "Big Shoulders Stencil Display", sans-serif; letter-spacing: .06em; }
   @keyframes ping { from { transform: scale(.5); opacity: 1; } to { transform: scale(1.8); opacity: 0; } }
 
+  .flood { opacity: 0; transition: opacity .4s ease; pointer-events: none; }
+  .flood.on { opacity: 1; }
   .rc-bg { fill: rgba(139, 181, 83, .07); stroke: rgba(139, 181, 83, .55); stroke-width: 1.5; stroke-dasharray: 7 5; }
   body.is-breach .rc-bg { fill: rgba(255, 52, 52, .06); stroke: rgba(255, 52, 52, .5); }
   .rc-lbl { fill: var(--dim); font: 12px "Share Tech Mono", monospace; }
@@ -294,6 +296,11 @@
       <h2>Tactical map</h2>
       <svg viewBox="-34 -30 668 676" role="img" aria-label="Map of the base. Four laser beams run between the four corner watchtowers.">
         <defs>
+          <radialGradient id="floodGrad" cx="50%" cy="50%" r="60%">
+            <stop offset="0" stop-color="#fff3b0" stop-opacity=".34"/>
+            <stop offset=".7" stop-color="#ffd966" stop-opacity=".14"/>
+            <stop offset="1" stop-color="#ffd966" stop-opacity="0"/>
+          </radialGradient>
           <clipPath id="mapClip"><rect x="0" y="0" width="600" height="600"/></clipPath>
           <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
             <line x1="0" y1="0" x2="0" y2="8" stroke="#6a7350" stroke-width="2"/>
@@ -395,6 +402,9 @@
           <text class="m-tlabel" x="50" y="594" text-anchor="middle">T4</text>
         </g>
 
+        <!-- floodlight glow when the relay is on -->
+        <rect id="floodGlow" class="flood" x="0" y="0" width="600" height="600" fill="url(#floodGrad)"/>
+
         <!-- radar sweep + contacts -->
         <g clip-path="url(#mapClip)">
           <line id="sweepLine" class="sc-sweep" x1="464" y1="168" x2="588" y2="168"/>
@@ -427,6 +437,7 @@
         <span><i style="background:#5c5f4c"></i>Bypassed (laser not aligned)</span>
         <span><i style="background:rgba(139,181,83,.55);height:10px;width:16px"></i>Radar coverage</span>
         <span><i style="background:var(--laser);height:10px;width:10px;border-radius:50%"></i>Radar contact</span>
+        <span><i style="background:#ffe27a;height:10px;width:16px"></i>Floodlight on</span>
       </div>
       <dl class="rstrip" aria-label="Radar">
         <div class="rtitle">Radar</div>
@@ -455,6 +466,7 @@
           <dt>Wi-Fi signal</dt><dd id="rssi">Unknown</dd>
           <dt>Base uptime</dt><dd id="uptime">Unknown</dd>
           <dt>Breaches today</dt><dd id="trips">0</dd>
+          <dt>Floodlight</dt><dd id="lightState">Unknown</dd>
         </dl>
       </section>
 
@@ -558,10 +570,11 @@ let alertsOn = false, audio = null, siren = null, drillUntil = 0, drillZone = 0,
 function parse(m) {
   const ev = { id: m.id, time: m.time, text: m.message || "", type: "other", zone: 0, zones: null,
                lvl: null, st: null, rssi: null, trips: null, up: null, test: false,
-               rdr: null, rng: null, rc: null, rad: null, rb: [] };
+               rdr: null, rng: null, rc: null, rad: null, rb: [], lt: null };
   for (const t of m.tags || []) {
     if (["intruder", "breach", "armed", "reset", "heartbeat", "boot", "radar", "radarclear"].includes(t)) ev.type = t;
     else if (/^rdr-(on|learn|off)$/.test(t)) ev.rdr = t.slice(4);
+    else if (/^lt-[01]$/.test(t)) ev.lt = +t.slice(3);
     else if (/^rng-\d+$/.test(t)) ev.rng = +t.slice(4);
     else if (/^rc-[01]$/.test(t)) ev.rc = +t.slice(3);
     else if (/^rad-\d+-\d+$/.test(t)) { const [a, d] = t.slice(4).split("-").map(Number); ev.rad = { a, d }; }
@@ -802,6 +815,13 @@ function render() {
   const up = [...msgs].reverse().find((e) => e.up !== null && e.type !== "drill");
   $("uptime").textContent = up ? dur((up.up * 60 + (now / 1000 - up.time)) * 1000) : "Unknown";
   $("trips").textContent = s.tripsToday;
+  // floodlight: newest report that says whether the relay is on; a breach turns it on straight away
+  const lt = [...msgs].reverse().find((e) => e.lt !== null && e.type !== "drill");
+  const lightOn = s.mode === "breach" || (!!lt && lt.lt === 1 && s.radar.active);   // radar only if LIGHT_ON_RADAR is set
+  const ls = $("lightState");
+  if (!lt && s.mode !== "breach") { ls.textContent = "Unknown"; ls.className = ""; }
+  else { ls.textContent = lightOn ? "On" : "Off"; ls.className = lightOn ? "warn" : "ok"; }
+  $("floodGlow").setAttribute("class", "flood" + (lightOn ? " on" : ""));
 
   /* radar */
   renderRadar(s.radar, now, linkState);

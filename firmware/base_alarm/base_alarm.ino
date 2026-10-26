@@ -63,6 +63,12 @@ const char* BASE_NAME  = "BASE ALPHA";
 // Buzzer: 0 = ACTIVE buzzer (beeps by itself on 3.3V), 1 = PASSIVE buzzer (needs a tone)
 #define BUZZER_PASSIVE 0
 
+// Relay for the floodlight: ON when an intruder breaks a laser, OFF when the guard presses reset
+// Most blue relay modules switch on with LOW = 1. If the light is ON when it should be OFF, set 0.
+#define RELAY_ACTIVE_LOW 1
+// 1 = also turn the light on during a radar contact (off again when the contact leaves)
+#define LIGHT_ON_RADAR 0
+
 // Radar: 1 = servo + HC-SR04 connected, 0 = no radar
 #define RADAR_ENABLED 1
 const int RADAR_RANGE_CM  = 50;   // radar ignores anything farther than this
@@ -80,6 +86,7 @@ const int LED_PIN     = 2;    // on-board LED, blinks in alarm
 const int SERVO_PIN   = 13;   // servo signal (orange/yellow wire)
 const int TRIG_PIN    = 26;   // HC-SR04 Trig
 const int ECHO_PIN    = 14;   // HC-SR04 Echo  (through a 1k / 2k voltage divider! Echo is 5 V)
+const int RELAY_PIN   = 19;   // relay module IN  (floodlight)
 const int SCR1_SDA    = 21;   // screen on the first I2C pins
 const int SCR1_SCL    = 22;
 const int SCR2_SDA    = 16;   // second screen (map + radar), always SH1107
@@ -180,6 +187,7 @@ int   radarNotes = 0;
 unsigned long radarNotesDay = 0;
 unsigned long chirpStart = 0;
 bool  chirping = false;
+volatile bool lightOn = false;  // floodlight relay state
 
 // ---------- Notification queue (sent from a background task so the siren never freezes) ----------
 struct Note { char tag[16]; int zone; char msg[120]; int prio; };
@@ -254,9 +262,9 @@ bool publish(const char* topic, const Note& n) {
   char body[700];
   snprintf(body, sizeof(body),
     "{\"topic\":\"%s\",\"title\":\"%s\",\"message\":\"%s\",\"priority\":%d,"
-    "\"tags\":[\"%s\",\"%s\",\"zone-%d\",\"zones-%s\",\"lvl-%s\",\"st-%s\",\"rssi%d\",\"trips-%d\",\"up-%lu\"%s]}",
+    "\"tags\":[\"%s\",\"%s\",\"zone-%d\",\"zones-%s\",\"lvl-%s\",\"st-%s\",\"rssi%d\",\"trips-%d\",\"up-%lu\",\"lt-%d\"%s]}",
     topic, BASE_NAME, n.msg, n.prio, emoji, n.tag, n.zone, zones, lvl, st,
-    (int)WiFi.RSSI(), tripCount, millis() / 60000UL, radar);
+    (int)WiFi.RSSI(), tripCount, millis() / 60000UL, lightOn ? 1 : 0, radar);
 
   int code = http.POST((uint8_t*)body, strlen(body));
   http.end();
@@ -413,6 +421,26 @@ void radarNotifications() {
     radarNotes++; lastRadarNote = now;
   }
 #endif
+}
+
+// ---------- Floodlight relay ----------
+void relaySet(bool on) {
+  lightOn = on;
+#if RELAY_ACTIVE_LOW
+  if (on) { pinMode(RELAY_PIN, OUTPUT); digitalWrite(RELAY_PIN, LOW); }
+  else    { pinMode(RELAY_PIN, INPUT); }   // let go of the pin = OFF (works even with 5 V relay modules)
+#else
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, on ? HIGH : LOW);
+#endif
+}
+
+void lightUpdate() {
+  bool want = (state == ALARM) || (LIGHT_ON_RADAR && contactActive && state == ARMED);
+  if (want != lightOn) {
+    relaySet(want);
+    Serial.println(want ? "Floodlight ON" : "Floodlight OFF");
+  }
 }
 
 // ---------- Buzzer ----------
@@ -807,6 +835,7 @@ void triggerAlarm(int zone) {
 
 // ---------- Setup ----------
 void setup() {
+  relaySet(false);                    // light off straight away at power on
   Serial.begin(115200);
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
@@ -902,6 +931,7 @@ void loop() {
   radarUpdate();
   radarNotifications();
   buzzerUpdate();
+  lightUpdate();
 
   // periodic report (also during an alarm, so the website knows the siren is still on)
   if ((state == ARMED || state == ALARM) && now - lastHeartbeat > HEARTBEAT_MS) {

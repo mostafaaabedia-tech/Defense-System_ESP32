@@ -110,8 +110,10 @@ When an intruder breaks a laser, the relay switches the light **on**, and it sta
 
 The light goes on the relay's screw terminals: **COM** and **NO** (normally open), in series with the light's power.
 
-- Most blue relay modules switch on when IN is LOW, which is the default (`RELAY_ACTIVE_LOW 1`).
-  If your light is on when it should be off, set `RELAY_ACTIVE_LOW 0`.
+- The default is `RELAY_ACTIVE_LOW 0`: the relay switches on when IN is HIGH (high-level trigger).
+  If your module switches on with LOW instead (the light is on when it should be off), set `RELAY_ACTIVE_LOW 1`.
+- The green LED lights but the relay doesn't click? The coil isn't getting power: VCC must go to **VIN / 5V**, not 3.3V,
+  and if the module has a **JD-VCC** jumper, it must be in place.
 - Set `LIGHT_ON_RADAR 1` if you also want the light on during a radar contact.
 - **Safety:** for the model, use a 5 V or 12 V LED lamp with its own adapter.
   Only switch a 220 V mains lamp if an adult who knows electrics wires it, with the relay inside a closed box.

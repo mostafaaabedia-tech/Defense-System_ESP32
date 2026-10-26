@@ -64,8 +64,9 @@ const char* BASE_NAME  = "BASE ALPHA";
 #define BUZZER_PASSIVE 0
 
 // Relay for the floodlight: ON when an intruder breaks a laser, OFF when the guard presses reset
-// Most blue relay modules switch on with LOW = 1. If the light is ON when it should be OFF, set 0.
-#define RELAY_ACTIVE_LOW 1
+// 0 = relay switches ON when IN is HIGH (high-level trigger)   <- your module
+// 1 = relay switches ON when IN is LOW  (low-level trigger)
+#define RELAY_ACTIVE_LOW 0
 // 1 = also turn the light on during a radar contact (off again when the contact leaves)
 #define LIGHT_ON_RADAR 0
 
